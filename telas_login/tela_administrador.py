@@ -26,9 +26,14 @@ def criar_janela_administrador():
     # .pack() com expand=True centraliza o widget na janela
     label_mensagem.pack(expand=True)
 
+    #Botão de Gerenciar Usuários
+    botao_gerenciar = tk.Button(janela_administrador, text="Gerenciar Usuários", command=lambda: print("Função de Gerenciar Usuários não implementada."), width=20)
+    botao_gerenciar.pack(pady=10)
+
     # Botão de Logoff
     botao_logoff = tk.Button(janela_administrador, text="Sair", command=lambda: [janela_administrador.destroy(), tela_login.criar_janela_login()], width=10)
     botao_logoff.pack(pady=10)
+
     # --- Iniciar o Loop Principal da Interface ---
     janela_administrador.mainloop()
 

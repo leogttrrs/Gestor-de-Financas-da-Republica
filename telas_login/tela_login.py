@@ -80,6 +80,7 @@ def fazer_login():
         
     else:
         messagebox.showerror("Erro de Login", "Usuário ou senha inválidos.")
+        
 # Inicia a aplicação
 if __name__ == "__main__":
     criar_janela_login()
