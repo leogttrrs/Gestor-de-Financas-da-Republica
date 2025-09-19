@@ -26,9 +26,6 @@ def criar_janela_morador():
     # .pack() com expand=True centraliza o widget na janela
     label_mensagem.pack(expand=True)
 
-     # Botão de Logoff
-    botao_logoff = tk.Button(janela_morador, text="Sair", command=lambda: [janela_morador.destroy(), tela_login.criar_janela_login()], width=10)
-    botao_logoff.pack(pady=10)
     # --- Iniciar o Loop Principal da Interface ---
     janela_morador.mainloop()
 
