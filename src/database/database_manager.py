@@ -5,7 +5,21 @@ from typing import List, Dict, Any
 class DatabaseManager:    
     def __init__(self, db_path: str = "republica.db"):
         self.db_path = db_path
+        self._connection = None
         self._criar_tabelas()
+    
+    def __enter__(self):
+        self._connection = self._obter_conexao()
+        return self._connection
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._connection:
+            if exc_type is None:
+                self._connection.commit()
+            else:
+                self._connection.rollback()
+            self._connection.close()
+            self._connection = None
     
     def _obter_conexao(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
