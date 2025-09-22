@@ -36,6 +36,21 @@ class EstilosApp:
         )
         
         style.configure(
+            'Danger.TButton',
+            background=cores['danger'],
+            foreground=cores['white'],
+            font=('Arial', 12, 'bold'),
+            padding=(20, 10),
+            relief='flat'
+        )
+        
+        style.map(
+            'Danger.TButton',
+            background=[('active', '#c82333')],
+            relief=[('pressed', 'flat'), ('!pressed', 'flat')]
+        )
+        
+        style.configure(
             'Custom.TEntry',
             fieldbackground=cores['white'],
             borderwidth=1,

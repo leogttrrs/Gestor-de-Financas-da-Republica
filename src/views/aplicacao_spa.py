@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict, Callable, Any
 from .tela_cadastro_base import TelaCadastroBase
+from .estilos import EstilosApp
 
 
 class ComponenteBase:
@@ -44,25 +45,31 @@ class TelaLogin(ComponenteBase):
         
         main_container = ttk.Frame(self.frame)
         main_container.pack(expand=True, fill="both")
+        main_container.configure(style="Background.TFrame")
         
-        card = ttk.Frame(main_container, relief="raised", borderwidth=1)
+        style = ttk.Style()
+        style.configure("Background.TFrame", background="#f5f5f5")
+        style.configure("Card.TFrame", background="white", relief="flat", borderwidth=0)
+        style.configure("TEntry", fieldbackground="white", borderwidth=1, relief="solid")
+        
+        card = ttk.Frame(main_container, style="Card.TFrame")
         card.place(relx=0.5, rely=0.5, anchor="center", width=400, height=550)
         
-        icon_frame = ttk.Frame(card)
+        icon_frame = ttk.Frame(card, style="Card.TFrame")
         icon_frame.pack(pady=(40, 20))
         
-        icon_label = ttk.Label(icon_frame, text="🏠", font=("Arial", 48))
+        icon_label = ttk.Label(icon_frame, text="🏠", font=("Arial", 48), background="white")
         icon_label.pack()
         
-        title_label = ttk.Label(card, text="Bem-vindo!", font=("Arial", 24, "bold"))
+        title_label = ttk.Label(card, text="Bem-vindo!", font=("Arial", 24, "bold"), background="white")
         title_label.pack(pady=(0, 10))
         
         subtitle_label = ttk.Label(card, text="Acesse sua conta para gerenciar sua república.", 
-                                 font=("Arial", 11), foreground="gray")
+                                 font=("Arial", 11), foreground="gray", background="white")
         subtitle_label.pack(pady=(0, 30))
         
-        fields_frame = ttk.Frame(card)
-        fields_frame.pack(padx=40, fill="x")
+        fields_frame = ttk.Frame(card, style="Card.TFrame")
+        fields_frame.pack(padx=30, fill="x")
         
         self.entry_cpf = ttk.Entry(fields_frame, font=("Arial", 12), width=30)
         self.entry_cpf.pack(pady=(0, 15), ipady=8)
@@ -79,30 +86,27 @@ class TelaLogin(ComponenteBase):
         self.entry_senha.configure(foreground="gray", show="")
         
         esqueceu_label = ttk.Label(fields_frame, text="Esqueceu sua senha?", 
-                                 font=("Arial", 10), foreground="#007bff", cursor="hand2")
+                                 font=("Arial", 10), foreground="#007bff", cursor="hand2", background="white")
         esqueceu_label.pack(anchor="w", pady=(0, 15))
         esqueceu_label.bind("<Button-1>", self._esqueceu_senha)
         
-        self.btn_entrar = ttk.Button(fields_frame, text="Entrar", command=self._fazer_login)
+        self.btn_entrar = ttk.Button(fields_frame, text="Entrar", command=self._fazer_login,
+                                   style="Primary.TButton")
         self.btn_entrar.pack(fill="x", ipady=10)
         
-        style = ttk.Style()
-        style.configure("Login.TButton", font=("Arial", 12, "bold"))
-        self.btn_entrar.configure(style="Login.TButton")
-        
-        criar_frame = ttk.Frame(card)
+        criar_frame = ttk.Frame(card, style="Card.TFrame")
         criar_frame.pack(pady=(20, 30))
         
-        text_frame = ttk.Frame(criar_frame)
+        text_frame = ttk.Frame(criar_frame, style="Card.TFrame")
         text_frame.pack()
         
         criar_label = ttk.Label(text_frame, text="Crie seu perfil", 
-                              font=("Arial", 10), foreground="#4A90E2", cursor="hand2")
+                              font=("Arial", 10), foreground="#4A90E2", cursor="hand2", background="white")
         criar_label.pack(side="left")
         criar_label.bind("<Button-1>", self._criar_perfil)
         
         desc_label = ttk.Label(text_frame, text=" para administrar sua república", 
-                             font=("Arial", 10), foreground="gray")
+                             font=("Arial", 10), foreground="gray", background="white")
         desc_label.pack(side="left")
         
         self.frame.bind("<Return>", lambda e: self._fazer_login())
@@ -173,7 +177,7 @@ class TelaCadastroAdministrador(TelaCadastroBase):
         main_container = ttk.Frame(self.frame)
         main_container.pack(expand=True, fill="both")
         
-        card = ttk.Frame(main_container, relief="solid", borderwidth=1)
+        card = ttk.Frame(main_container)
         card.place(relx=0.5, rely=0.5, anchor="center", width=500, height=650)
         card.configure(style="Card.TFrame")
         
@@ -456,7 +460,7 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         main_container = ttk.Frame(self.frame)
         main_container.pack(expand=True, fill="both")
         
-        card = ttk.Frame(main_container, relief="raised", borderwidth=1)
+        card = ttk.Frame(main_container)
         card.place(relx=0.5, rely=0.5, anchor="center", width=450, height=600)
         
         header_frame = ttk.Frame(card)
@@ -587,7 +591,9 @@ class AplicacaoSPA:
         self.root.title("Sistema de Gestão de República")
         self.root.geometry("1000x700")
         self.root.minsize(800, 600)
-        self.root.configure(bg="#f5f5f5")
+        self.root.configure(bg="#ffffff")
+        
+        EstilosApp.configurar_estilos()
         
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() // 2) - (1000 // 2)
