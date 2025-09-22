@@ -21,7 +21,6 @@ class Quarto:
             self._moradores = [row['nome'] for row in db_manager.executar_query(query, (self.id,))]
         return self._moradores
 
-    # ANOTAÇÃO: Nova propriedade 'status' que é calculada em tempo real
     @property
     def status(self) -> str:
         return "Ocupado" if self.possui_contratos_ativos() else "Disponível"

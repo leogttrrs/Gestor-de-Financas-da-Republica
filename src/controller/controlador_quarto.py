@@ -1,10 +1,9 @@
-# arquivo: src/controller/controlador_quarto.py
-
 from .abstract_controlador import AbstractControlador
 from src.views.tela_quarto import TelaQuarto
 from src.views.tela_formulario_quarto import TelaFormularioQuarto
 from src.models.Quarto import Quarto
 from tkinter import messagebox
+from src.models.Republica import Republica
 
 
 class ControladorQuarto(AbstractControlador):
@@ -18,13 +17,21 @@ class ControladorQuarto(AbstractControlador):
         self.tela_gerenciar.mostrar()
 
     def abrir_tela_formulario(self, quarto_existente=None):
-        # ANOTAÇÃO: Lógica de buscar moradores disponíveis foi removida
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
         TelaFormularioQuarto(root_window, self, quarto_existente)
 
     def salvar_quarto(self, dados: dict):
-        # ANOTAÇÃO: Lógica de salvar e sincronizar moradores foi simplificada
         try:
+            admin_logado = self._controlador_sistema.usuario_logado
+            if not admin_logado:
+                return False, "Nenhum administrador está logado."
+
+            republica_atual = Republica.buscar_por_admin_id(admin_logado.id)
+            if not republica_atual:
+                return False, "Nenhuma república encontrada para o administrador atual."
+
+            dados["republica_id"] = republica_atual.id
+
             quarto = Quarto(
                 id=dados.get("id"),
                 numero_quarto=dados["numero_quarto"],

@@ -46,7 +46,6 @@ class TelaFormularioQuarto(tk.Toplevel):
             dados = {
                 "numero_quarto": int(self.numero_var.get()),
                 "tamanho": int(self.tamanho_var.get()),
-                "republica_id": 1,
                 "id": self.quarto_existente.id if self.quarto_existente else None
             }
             sucesso, mensagem = self.controlador.salvar_quarto(dados)
