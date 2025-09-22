@@ -65,21 +65,6 @@ class ControladorSistema:
             return None
         return None
 
-    def fazer_login_primeiro_admin(self):
-        try:
-            from src.models.Administrador import Administrador
-            admins = Administrador.listar_todos()
-            
-            if admins and len(admins) > 0:
-                primeiro_admin = admins[0]
-                self.__usuario_logado = primeiro_admin
-                return primeiro_admin
-            
-            return None
-        except Exception as e:
-            print(f"Erro ao buscar administrador: {e}")
-            return None
-
     def gerenciar_administradores(self):
         self.__controlador_administrador.abre_tela()
 
