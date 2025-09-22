@@ -1,6 +1,6 @@
 from src.models.usuario import Usuario
 from src.database.database_manager import DatabaseManager
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 import sqlite3
 
 
@@ -72,7 +72,8 @@ class Administrador(Usuario):
             with DatabaseManager() as db:
                 cursor = db.cursor()
                 
-                cursor.execute("DELETE FROM usuarios WHERE id = ? AND tipo_usuario = 'administrador'", (self.id,))
+                cursor.execute("DELETE FROM administrador WHERE id = ?", (self.id,))
+                cursor.execute("DELETE FROM usuario WHERE id = ?", (self.id,))
                 
                 if cursor.rowcount > 0:
                     return True, "Administrador excluído com sucesso"
@@ -133,36 +134,6 @@ class Administrador(Usuario):
             return None
 
     @staticmethod
-    def listar_todos() -> List['Administrador']:
-        administradores = []
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                cursor.execute("""
-                    SELECT u.id, u.cpf, u.nome, u.email, u.telefone, u.genero, u.senhaCriptografada 
-                    FROM usuario u
-                    INNER JOIN administrador a ON u.id = a.id
-                    ORDER BY u.nome
-                """)
-                
-                for row in cursor.fetchall():
-                    admin = Administrador(
-                        cpf=row[1], 
-                        nome=row[2], 
-                        email=row[3], 
-                        telefone=row[4], 
-                        genero=row[5], 
-                        senhaCriptografada=row[6],
-                        id=row[0]
-                    )
-                    administradores.append(admin)
-                    
-        except Exception as e:
-            print(f"Erro ao listar administradores: {e}")
-        
-        return administradores
-
-    @staticmethod
     def autenticar(cpf: str, senha: str) -> Optional['Administrador']:
         try:
             with DatabaseManager() as db:
@@ -193,6 +164,5 @@ class Administrador(Usuario):
             'email': self.email,
             'telefone': self.telefone,
             'genero': self.genero,
-            'senha': self.senha,
             'senhaCriptografada': self.senhaCriptografada
         }

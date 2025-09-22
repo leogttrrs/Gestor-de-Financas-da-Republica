@@ -50,7 +50,7 @@ class TelaAdministrador(ComponenteBase):
     
     def criar_menu_opcoes(self, parent):
         opcoes = [
-            ("Dashboard", self.mostrar_dashboard),
+            ("Visão Geral", self.mostrar_dashboard),
             ("Gerenciar Moradores", self.gerenciar_moradores),
             ("Gerenciar Financas", self.gerenciar_financas),
             ("Configurações", self.mostrar_configuracoes)
@@ -67,23 +67,12 @@ class TelaAdministrador(ComponenteBase):
     def mostrar_dashboard(self):
         self.limpar_content_frame()
         
-        title = ttk.Label(self.content_frame, text="Dashboard", font=("Arial", 14, "bold"))
+        title = ttk.Label(self.content_frame, text="Visão Geral", font=("Arial", 14, "bold"))
         title.pack(pady=20)
-        
-        info_frame = ttk.Frame(self.content_frame)
-        info_frame.pack(expand=True, fill="both", padx=20, pady=20)
-        
-        cards_frame = ttk.Frame(info_frame)
-        cards_frame.pack(fill="x", pady=(0, 20))
-        
-        self.criar_card_info(cards_frame, "Total de Moradores", "5", "left")
-        self.criar_card_info(cards_frame, "Receita Mensal", "R$ 2.500,00", "left")
-        self.criar_card_info(cards_frame, "Despesas Pendentes", "R$ 450,00", "right")
-        
-        status_label = ttk.Label(info_frame, text="Sistema funcionando normalmente", 
-                               font=("Arial", 10), foreground="green")
-        status_label.pack(pady=10)
-    
+
+        messagebox.showinfo("Em Desenvolvimento", "Visão Geral em desenvolvimento")
+
+
     def criar_card_info(self, parent, titulo, valor, lado):
         card = ttk.Frame(parent, relief="raised", borderwidth=2)
         card.pack(side=lado, padx=10, pady=5, fill="x", expand=True)

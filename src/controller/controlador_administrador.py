@@ -2,7 +2,7 @@ from .abstract_controlador import AbstractControlador
 from src.models.Administrador import Administrador
 from src.models.Republica import Republica
 from src.utils.validador import Validador
-from typing import List, Tuple, Optional
+from typing import Tuple, Optional
 from tkinter import messagebox
 
 
@@ -49,12 +49,6 @@ class ControladorAdministrador(AbstractControlador):
         except Exception as e:
             return False, f"Erro ao cadastrar administrador: {str(e)}"
 
-    def listar_administradores(self) -> List[Administrador]:
-        try:
-            return Administrador.listar_todos()
-        except Exception:
-            return []
-
     def buscar_administrador_por_cpf(self, cpf: str) -> Optional[Administrador]:
         try:
             return Administrador.buscar_por_cpf(cpf)
@@ -89,10 +83,11 @@ class ControladorAdministrador(AbstractControlador):
                     return False, msg_senha
                 admin.senhaCriptografada = Validador.hash_senha(senha)
             
-            if admin.atualizar():
+            sucesso, mensagem = admin.atualizar()
+            if sucesso:
                 return True, "Administrador atualizado com sucesso"
             else:
-                return False, "Erro ao atualizar administrador"
+                return False, f"Erro ao atualizar administrador: {mensagem}"
                 
         except Exception as e:
             return False, f"Erro ao editar administrador: {str(e)}"
@@ -103,10 +98,11 @@ class ControladorAdministrador(AbstractControlador):
             if not admin:
                 return False, "Administrador não encontrado"
             
-            if admin.excluir():
+            sucesso, mensagem = admin.excluir()
+            if sucesso:
                 return True, "Administrador excluído com sucesso"
             else:
-                return False, "Erro ao excluir administrador"
+                return False, f"Erro ao excluir administrador: {mensagem}"
                 
         except Exception as e:
             return False, f"Erro ao excluir administrador: {str(e)}"
@@ -129,6 +125,49 @@ class ControladorAdministrador(AbstractControlador):
         from tkinter import messagebox
         messagebox.showinfo("Em desenvolvimento", "Funcionalidade de mudar senha em desenvolvimento.")
 
+    def excluir_perfil_admin(self, tela_perfil):
+        from tkinter import messagebox
+        
+        # Confirmação com o usuário
+        resposta = messagebox.askyesno(
+            "Confirmar Exclusão", 
+            "⚠️ ATENÇÃO!\n\n"
+            "Esta ação irá:\n"
+            "• Excluir seu perfil de administrador\n"
+            "• Apagar TODOS os dados da república\n"
+            "• Remover todos os moradores, quartos e contratos\n"
+            "• Esta ação é IRREVERSÍVEL!\n\n"
+            "Tem certeza que deseja continuar?",
+            icon='warning'
+        )
+
+        if not resposta:
+            return
+            
+        try:
+            usuario_logado = self._controlador_sistema.usuario_logado
+            if not usuario_logado:
+                tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
+                return
+            
+            admin = Administrador.buscar_por_cpf(usuario_logado.cpf)
+            if not admin:
+                tela_perfil.mostrar_mensagem_erro("Administrador não encontrado")
+                return
+            
+            sucesso, mensagem = admin.excluir()
+            
+            if sucesso:
+                messagebox.showinfo("Perfil Excluído", "Perfil excluído com sucesso. Retornando ao login...")
+                self._controlador_sistema.usuario_logado = None
+                if hasattr(tela_perfil, 'on_logout') and tela_perfil.on_logout:
+                    tela_perfil.on_logout()
+            else:
+                tela_perfil.mostrar_mensagem_erro(f"Erro ao excluir perfil: {mensagem}")
+                
+        except Exception as e:
+            tela_perfil.mostrar_mensagem_erro(f"Erro inesperado ao excluir perfil: {str(e)}")
+
     def atualizar_perfil(self, tela_perfil, dados):
         try:
             usuario_logado = self._controlador_sistema.usuario_logado
@@ -136,18 +175,15 @@ class ControladorAdministrador(AbstractControlador):
                 tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
                 return
             
-            if not dados['nome']:
-                tela_perfil.mostrar_mensagem_erro("Nome é obrigatório")
-                return
-            
-            if not dados['email']:
-                tela_perfil.mostrar_mensagem_erro("E-mail é obrigatório")
-                return
-            
-            import re
-            email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_regex, dados['email']):
-                tela_perfil.mostrar_mensagem_erro("Formato de e-mail inválido")
+            valido, mensagem = Validador.validar_dados_usuario(
+                usuario_logado.cpf, 
+                dados['nome'], 
+                dados['email'], 
+                dados['telefone'], 
+                usuario_logado.genero
+            )
+            if not valido:
+                tela_perfil.mostrar_mensagem_erro(mensagem)
                 return
             
             admin = Administrador.buscar_por_cpf(usuario_logado.cpf)
@@ -156,7 +192,8 @@ class ControladorAdministrador(AbstractControlador):
                 admin.email = dados['email']
                 admin.telefone = dados['telefone']
                 
-                if admin.atualizar():
+                sucesso, mensagem = admin.atualizar()
+                if sucesso:
                     usuario_logado.nome = dados['nome']
                     usuario_logado.email = dados['email']
                     usuario_logado.telefone = dados['telefone']
@@ -164,7 +201,7 @@ class ControladorAdministrador(AbstractControlador):
                     tela_perfil.mostrar_mensagem_sucesso("Perfil atualizado com sucesso!")
                     self.abrir_tela_perfil(tela_perfil)
                 else:
-                    tela_perfil.mostrar_mensagem_erro("Erro ao atualizar perfil")
+                    tela_perfil.mostrar_mensagem_erro(f"Erro ao atualizar perfil: {mensagem}")
             else:
                 tela_perfil.mostrar_mensagem_erro("Administrador não encontrado")
                 

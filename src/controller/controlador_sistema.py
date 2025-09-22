@@ -38,8 +38,24 @@ class ControladorSistema:
         return self.__controlador_administrador
 
     @property
+    def controlador_morador(self):
+        return self.__controlador_morador
+
+    @property
     def controlador_quarto(self) -> ControladorQuarto:
         return self.__controlador_quarto
+
+    @property
+    def controlador_contrato(self):
+        return self.__controlador_contrato
+
+    @property
+    def controlador_divida(self):
+        return self.__controlador_divida
+
+    @property
+    def controlador_ocorrencia(self):
+        return self.__controlador_ocorrencia
 
     @property
     def tela_atual(self):
