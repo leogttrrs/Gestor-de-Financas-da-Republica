@@ -52,30 +52,18 @@ class Administrador(Usuario):
                 valido, mensagem = self.validar_dados()
                 if not valido:
                     return False, mensagem
-                
-                if self.__senha and len(self.__senha) < 6:
-                    return False, "Senha deve ter pelo menos 6 caracteres"
-                
-                if self.__senha:
-                    senha_hash = self.hash_senha(self.__senha)
-                    self.senhaCriptografada = senha_hash
-                    cursor.execute("""
-                        UPDATE usuario 
-                        SET nome = ?, email = ?, telefone = ?, genero = ?, senhaCriptografada = ? 
-                        WHERE id = ?
-                    """, (self.nome, self.email, self.telefone, self.genero, senha_hash, self.id))
-                else:
-                    cursor.execute("""
-                        UPDATE usuario 
-                        SET nome = ?, email = ?, telefone = ?, genero = ? 
-                        WHERE id = ?
-                    """, (self.nome, self.email, self.telefone, self.genero, self.id))
-                
+
+                cursor.execute("""
+                    UPDATE usuario 
+                    SET nome = ?, email = ?, telefone = ?, genero = ?, senhaCriptografada = ? 
+                    WHERE id = ?
+                """, (self.nome, self.email, self.telefone, self.genero, self.senhaCriptografada, self.id))
+
                 if cursor.rowcount > 0:
                     return True, "Perfil atualizado com sucesso"
                 else:
-                    return False, "Administrador não encontrado"
-                    
+                    return False, "Administrador não encontrado para atualizar"
+
         except sqlite3.Error as e:
             return False, f"Erro ao atualizar administrador: {str(e)}"
 

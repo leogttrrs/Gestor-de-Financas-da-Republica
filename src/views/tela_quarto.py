@@ -62,7 +62,7 @@ class TelaQuarto(ComponenteBase):
         for widget in self.frame_lista.winfo_children():
             widget.destroy()
 
-        headers = ["Número", "Tamanho (m²)", "Status", "Moradores", "Ações"]
+        headers = ["Número", "Tamanho (m²)", "Status", "Morador", "Ações"]
         weights = [1, 1, 1, 3, 2]
 
         for i, header in enumerate(headers):
