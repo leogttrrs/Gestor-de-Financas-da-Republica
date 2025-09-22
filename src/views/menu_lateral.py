@@ -118,7 +118,7 @@ class MenuMorador(MenuLateral):
     def __init__(self, parent, usuario_logado=None, callback_navegacao=None):
         self.usuario_logado = usuario_logado
         self.callback_navegacao = callback_navegacao
-        super().__init__(parent, "República dos Lagos", "Morador")
+        super().__init__(parent, "República", "Morador")
         self._definir_opcoes_morador()
     
     def _definir_opcoes_morador(self):
