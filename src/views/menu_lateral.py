@@ -14,7 +14,7 @@ class MenuLateral:
         self.criar_menu()
     
     def criar_menu(self):
-        self.frame = ttk.Frame(self.parent, width=200)
+        self.frame = ttk.Frame(self.parent, width=200, style="MenuBackground.TFrame")
         self.frame.pack(side="left", fill="y")
         self.frame.pack_propagate(False)
         
@@ -22,6 +22,7 @@ class MenuLateral:
         header_frame.pack(fill="x", pady=(0, 1))
         
         style = ttk.Style()
+        style.configure("MenuBackground.TFrame", background="#f0f0f0")
         style.configure("MenuHeader.TFrame", background="#4A90E2")
         style.configure("MenuTitle.TLabel", background="#4A90E2", foreground="white", font=("Arial", 12, "bold"))
         style.configure("MenuSubtitle.TLabel", background="#4A90E2", foreground="white", font=("Arial", 9))
@@ -32,13 +33,13 @@ class MenuLateral:
         subtitle_label = ttk.Label(header_frame, text=self.tipo_usuario, style="MenuSubtitle.TLabel")
         subtitle_label.pack(pady=(0, 15))
         
-        self.menu_container = ttk.Frame(self.frame)
+        self.menu_container = ttk.Frame(self.frame, style="MenuBackground.TFrame")
         self.menu_container.pack(fill="both", expand=True, padx=0, pady=0)
         
-        footer_frame = ttk.Frame(self.frame)
+        footer_frame = ttk.Frame(self.frame, style="MenuBackground.TFrame")
         footer_frame.pack(side="bottom", fill="x", padx=10, pady=10)
         
-        btn_sair = ttk.Button(footer_frame, text="🚪 Sair", command=self._sair)
+        btn_sair = ttk.Button(footer_frame, text="🚪 Sair", command=self._sair, style="MenuButton.TButton")
         btn_sair.pack(fill="x")
     
     def definir_opcoes_menu(self, opcoes: List[Tuple[str, Callable]]):
@@ -49,8 +50,16 @@ class MenuLateral:
         for widget in self.menu_container.winfo_children():
             widget.destroy()
         
+        style = ttk.Style()
+        style.configure("MenuButton.TButton", 
+                       background="#f0f0f0", 
+                       relief="flat",
+                       borderwidth=0)
+        style.map("MenuButton.TButton",
+                 background=[("active", "#e0e0e0")])
+        
         for texto, callback in self.opcoes_menu:
-            btn = ttk.Button(self.menu_container, text=texto, command=callback)
+            btn = ttk.Button(self.menu_container, text=texto, command=callback, style="MenuButton.TButton")
             btn.pack(fill="x", padx=10, pady=2)
     
     def definir_callback_sair(self, callback: Callable):
