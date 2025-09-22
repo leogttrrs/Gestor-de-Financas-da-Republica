@@ -2,16 +2,16 @@ import sqlite3
 from typing import List, Dict, Any
 
 
-class DatabaseManager:    
+class DatabaseManager:
     def __init__(self, db_path: str = "republica.db"):
         self.db_path = db_path
         self._connection = None
         self._criar_tabelas()
-    
+
     def __enter__(self):
         self._connection = self._obter_conexao()
         return self._connection
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._connection:
             if exc_type is None:
@@ -20,17 +20,17 @@ class DatabaseManager:
                 self._connection.rollback()
             self._connection.close()
             self._connection = None
-    
+
     def _obter_conexao(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
-    
+
     def _criar_tabelas(self):
         with self._obter_conexao() as conn:
             cursor = conn.cursor()
-            
+
             # Tabela Usuario
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS usuario (
@@ -45,7 +45,7 @@ class DatabaseManager:
                     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Tabela Administrador
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS administrador (
@@ -53,29 +53,31 @@ class DatabaseManager:
                     FOREIGN KEY (id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Republica
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS republica (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
-                    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
+                            CREATE TABLE IF NOT EXISTS republica (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                nome TEXT NOT NULL,
+                                administrador_id INTEGER NOT NULL UNIQUE, -- Adicionado
+                                data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (administrador_id) REFERENCES administrador(id) ON DELETE CASCADE
+                            )
+                        """)
+
             # Tabela Quarto
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS quarto (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero_quarto INTEGER NOT NULL,
-                    tamanho INTEGER NOT NULL,
-                    republica_id INTEGER NOT NULL,
-                    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (republica_id) REFERENCES republica(id) ON DELETE CASCADE,
-                    UNIQUE(numero_quarto, republica_id)
-                )
-            """)
-            
+                            CREATE TABLE IF NOT EXISTS quarto (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                numero_quarto INTEGER NOT NULL,
+                                tamanho INTEGER NOT NULL,
+                                republica_id INTEGER NOT NULL,
+                                data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (republica_id) REFERENCES republica(id) ON DELETE CASCADE,
+                                UNIQUE(numero_quarto, republica_id)
+                            )
+                        """)
+
             # Tabela Morador
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS morador (
@@ -83,7 +85,7 @@ class DatabaseManager:
                     FOREIGN KEY (id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Contrato
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS contrato (
@@ -99,7 +101,7 @@ class DatabaseManager:
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Divida
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS divida (
@@ -114,7 +116,7 @@ class DatabaseManager:
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Recorrencia
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS recorrencia (
@@ -128,7 +130,7 @@ class DatabaseManager:
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-            
+
             # Tabela de relacionamento entre Divida e Recorrencia
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS divida_recorrencia (
@@ -139,7 +141,7 @@ class DatabaseManager:
                     FOREIGN KEY (recorrencia_id) REFERENCES recorrencia(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Pagamento
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS pagamento (
@@ -152,7 +154,7 @@ class DatabaseManager:
                     FOREIGN KEY (divida_id) REFERENCES divida(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Ocorrencia
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ocorrencia (
@@ -166,7 +168,7 @@ class DatabaseManager:
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
                 )
             """)
-            
+
             # Tabela Alerta
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS alerta (
@@ -177,9 +179,8 @@ class DatabaseManager:
                     FOREIGN KEY (republica_id) REFERENCES republica(id) ON DELETE CASCADE
                 )
             """)
-            
             conn.commit()
-    
+
     def executar_query(self, query: str, parametros: tuple = ()) -> List[Dict[str, Any]]:
         with self._obter_conexao() as conn:
             cursor = conn.cursor()
@@ -187,14 +188,14 @@ class DatabaseManager:
             colunas = [desc[0] for desc in cursor.description]
             resultados = cursor.fetchall()
             return [dict(zip(colunas, linha)) for linha in resultados]
-    
+
     def executar_comando(self, comando: str, parametros: tuple = ()) -> int:
         with self._obter_conexao() as conn:
             cursor = conn.cursor()
             cursor.execute(comando, parametros)
             conn.commit()
             return cursor.lastrowid if comando.strip().upper().startswith('INSERT') else cursor.rowcount
-    
+
     def executar_transacao(self, comandos: List[tuple]) -> bool:
         try:
             with self._obter_conexao() as conn:
@@ -206,39 +207,39 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f" Erro na transação: {e}")
             return False
-    
+
     def verificar_integridade(self) -> Dict[str, Any]:
         with self._obter_conexao() as conn:
             cursor = conn.cursor()
-            
+
             cursor.execute("PRAGMA foreign_key_check")
             problemas_fk = cursor.fetchall()
-            
+
             cursor.execute("PRAGMA integrity_check")
             integridade = cursor.fetchone()[0]
-            
+
             return {
                 "integridade_geral": integridade,
                 "problemas_chaves_estrangeiras": len(problemas_fk),
                 "detalhes_problemas": problemas_fk
             }
-    
+
     def obter_estatisticas(self) -> Dict[str, int]:
         estatisticas = {}
         tabelas = [
-            'usuario', 'administrador', 'morador', 'republica', 
-            'quarto', 'contrato', 'divida', 'pagamento', 
+            'usuario', 'administrador', 'morador', 'republica',
+            'quarto', 'contrato', 'divida', 'pagamento',
             'ocorrencia', 'alerta', 'recorrencia', 'divida_recorrencia'
         ]
-        
+
         with self._obter_conexao() as conn:
             cursor = conn.cursor()
             for tabela in tabelas:
                 cursor.execute(f"SELECT COUNT(*) FROM {tabela}")
                 estatisticas[tabela] = cursor.fetchone()[0]
-        
+
         return estatisticas
-    
+
     def backup_database(self, backup_path: str) -> bool:
         try:
             with self._obter_conexao() as conn:

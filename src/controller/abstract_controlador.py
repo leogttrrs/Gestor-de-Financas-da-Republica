@@ -10,5 +10,5 @@ class AbstractControlador(ABC):
         self._controlador_sistema.abre_tela()
 
     @abstractmethod
-    def abre_tela(self):
+    def abre_tela(self, parent_view=None):
         pass

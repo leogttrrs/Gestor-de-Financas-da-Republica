@@ -49,15 +49,15 @@ class TelaComMenuLateral(ComponenteBase):
         if secao == "perfil_admin":
             self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
         elif secao == "moradores":
-            self.controlador_sistema.controlador_morador.abrir_tela_gerenciar(self)
+            self.controlador_sistema.controlador_morador.abre_tela(self)
         elif secao == "quartos":
-            self.controlador_sistema.controlador_quarto.abrir_tela_gerenciar(self)
+            self.controlador_sistema.controlador_quarto.abre_tela(self)
         elif secao == "contratos":
-            self.controlador_sistema.controlador_contrato.abrir_tela_gerenciar(self)
+            self.controlador_sistema.controlador_contrato.abre_tela(self)
         elif secao == "dividas":
-            self.controlador_sistema.controlador_divida.abrir_tela_gerenciar(self)
+            self.controlador_sistema.controlador_divida.abre_tela(self)
         elif secao == "ocorrencias":
-            self.controlador_sistema.controlador_ocorrencia.abrir_tela_gerenciar(self)
+            self.controlador_sistema.controlador_ocorrencia.abre_tela(self)
         else:
             self._mostrar_em_desenvolvimento(secao)
     

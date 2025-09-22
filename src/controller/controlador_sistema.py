@@ -36,6 +36,18 @@ class ControladorSistema:
     @property
     def controlador_administrador(self) -> ControladorAdministrador:
         return self.__controlador_administrador
+
+    @property
+    def controlador_quarto(self) -> ControladorQuarto:
+        return self.__controlador_quarto
+
+    @property
+    def tela_atual(self):
+        return self.__tela_atual
+
+    @tela_atual.setter
+    def tela_atual(self, tela):
+        self.__tela_atual = tela
     
     @property
     def usuario_logado(self):
