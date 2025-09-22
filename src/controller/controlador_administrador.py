@@ -128,10 +128,9 @@ class ControladorAdministrador(AbstractControlador):
     def excluir_perfil_admin(self, tela_perfil):
         from tkinter import messagebox
         
-        # Confirmação com o usuário
         resposta = messagebox.askyesno(
             "Confirmar Exclusão", 
-            "⚠️ ATENÇÃO!\n\n"
+            "ATENÇÃO!\n\n"
             "Esta ação irá:\n"
             "• Excluir seu perfil de administrador\n"
             "• Apagar TODOS os dados da república\n"
