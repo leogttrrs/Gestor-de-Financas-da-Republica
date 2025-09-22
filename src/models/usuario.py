@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
 import hashlib
+from ..utils.validador import Validador
 
 
 class Usuario(ABC):
@@ -92,47 +93,25 @@ class Usuario(ABC):
             self.__senhaCriptografada = senha_criptografada
 
     def validar_cpf(self, cpf: str) -> bool:
-        cpf_limpo = ''.join(filter(str.isdigit, cpf))
-        
-        if len(cpf_limpo) != 11:
+        resultado = Validador.validar_cpf(cpf)
+        if isinstance(resultado, str) and ("inválido" in resultado or "Erro" in resultado):
             return False
-        
-        if cpf_limpo == cpf_limpo[0] * 11:
-            return False
-        
-        soma = sum(int(cpf_limpo[i]) * (10 - i) for i in range(9))
-        resto = soma % 11
-        digito1 = 0 if resto < 2 else 11 - resto
-        
-        if int(cpf_limpo[9]) != digito1:
-            return False
-        
-        soma = sum(int(cpf_limpo[i]) * (11 - i) for i in range(10))
-        resto = soma % 11
-        digito2 = 0 if resto < 2 else 11 - resto
-        
-        return int(cpf_limpo[10]) == digito2
+        return True
 
     def hash_senha(self, senha: str) -> str:
-        return hashlib.sha256(senha.encode()).hexdigest()
+        return Validador.hash_senha(senha)
 
     def verificar_senha(self, senha: str) -> bool:
         return self.hash_senha(senha) == self.__senhaCriptografada
 
     def validar_dados(self) -> Tuple[bool, str]:
-        if not self.__nome or len(self.__nome.strip()) < 2:
-            return False, "Nome deve ter pelo menos 2 caracteres"
-        
-        if not self.validar_cpf(self.__cpf):
-            return False, "CPF inválido"
-        
-        if not self.__telefone or len(self.__telefone.strip()) < 10:
-            return False, "Telefone deve ter pelo menos 10 dígitos"
-        
-        if self.__genero not in ['masculino', 'feminino']:
-            return False, "Gênero deve ser 'masculino' ou 'feminino'"
-        
-        return True, "Dados válidos"
+        return Validador.validar_dados_usuario(
+            self.__cpf, 
+            self.__nome, 
+            self.__email, 
+            self.__telefone, 
+            self.__genero
+        )
 
     @abstractmethod
     def salvar(self) -> Tuple[bool, str]:
