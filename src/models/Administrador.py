@@ -95,6 +95,15 @@ class Administrador(Usuario):
             return False, f"Erro ao excluir administrador: {str(e)}"
 
     @staticmethod
+    def existe_algum() -> bool:
+        try:
+            db_manager = DatabaseManager()
+            resultado = db_manager.executar_query("SELECT 1 FROM administrador LIMIT 1")
+            return len(resultado) > 0
+        except Exception as e:
+            return False
+
+    @staticmethod
     def buscar_por_id(id: int) -> Optional['Administrador']:
         try:
             with DatabaseManager() as db:

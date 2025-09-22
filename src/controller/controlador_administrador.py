@@ -1,7 +1,9 @@
 from .abstract_controlador import AbstractControlador
 from src.models.Administrador import Administrador
+from src.models.Republica import Republica
 from src.utils.validador import Validador
 from typing import List, Tuple, Optional
+from tkinter import messagebox
 
 
 class ControladorAdministrador(AbstractControlador):
@@ -11,6 +13,9 @@ class ControladorAdministrador(AbstractControlador):
 
     def cadastrar_administrador(self, cpf: str, nome: str, email: str, telefone: str, genero: str, senha: str) -> Tuple[bool, str]:
         try:
+            if Administrador.existe_algum():
+                return False, "Já existe um administrador no sistema. Não é possível criar outro."
+
             valido, mensagem = Validador.validar_dados_usuario(cpf, nome, email, telefone, genero)
             if not valido:
                 return False, mensagem
@@ -20,13 +25,24 @@ class ControladorAdministrador(AbstractControlador):
                 return False, msg_senha
             
             senha_hash = Validador.hash_senha(senha)
-            
-            admin = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone, 
-                                genero=genero, senhaCriptografada=senha_hash)
-            
-            sucesso, mensagem = admin.salvar()
+
+            admin_para_salvar = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone,
+                                              genero=genero, senhaCriptografada=senha_hash)
+            sucesso, mensagem = admin_para_salvar.salvar()
+
             if sucesso:
-                return True, mensagem
+                try:
+                    if not admin_para_salvar.id:
+                        return False, "Erro crítico: O ID do administrador não foi definido após salvar."
+
+                    nova_republica = Republica(
+                        nome=f"República de {admin_para_salvar.nome}",
+                        administrador_id=admin_para_salvar.id
+                    )
+                    nova_republica.salvar()
+                    return True, "Administrador e República criados com sucesso!"
+                except Exception as e_rep:
+                    return False, f"Admin criado, mas falha ao criar república: {str(e_rep)}"
             else:
                 return False, mensagem
                 
