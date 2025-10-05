@@ -95,7 +95,7 @@ class DatabaseManager:
                     data_inicio DATE NOT NULL,
                     data_fim DATE,
                     valor_aluguel DECIMAL(10,2) NOT NULL,
-                    status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'finalizado', 'rescindido')),
+                    status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'finalizado')),
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (quarto_id) REFERENCES quarto(id),
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
@@ -110,7 +110,6 @@ class DatabaseManager:
                     valor_original DECIMAL(10,2) NOT NULL,
                     valor_pendente DECIMAL(10,2) NOT NULL,
                     descricao TEXT NOT NULL,
-                    data_vencimento DATE NOT NULL,
                     status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'paga', 'vencida')),
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
@@ -162,7 +161,7 @@ class DatabaseManager:
                     morador_id INTEGER NOT NULL,
                     descricao TEXT NOT NULL,
                     data_ocorrencia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT NOT NULL DEFAULT 'aberta' CHECK (status IN ('aberta', 'em_andamento', 'resolvida', 'fechada')),
+                    status BOOL NOT NULL,
                     prioridade TEXT NOT NULL DEFAULT 'media' CHECK (prioridade IN ('baixa', 'media', 'alta', 'urgente')),
                     categoria TEXT,
                     FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
