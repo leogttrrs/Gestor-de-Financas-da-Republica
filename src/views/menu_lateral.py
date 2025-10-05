@@ -108,13 +108,15 @@ class MenuAdministrador(MenuLateral):
     
     def _definir_opcoes_admin(self):
         opcoes = [
-            ("🏠 Visão Geral", lambda: self._navegar("dashboard")),
+            ("👁 Visão Geral", lambda: self._navegar("dashboard")),
             ("👥 Moradores", lambda: self._navegar("moradores")),
-            ("🏠 Quartos", lambda: self._navegar("quartos")),
+            ("🏠Republica", lambda: self._navegar("republica")),
+            ("🛏 Quartos", lambda: self._navegar("quartos")),
             ("📋 Contratos", lambda: self._navegar("contratos")),
             ("💰 Dívidas", lambda: self._navegar("dividas")),
             ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
-            ("🔔 Alertas", lambda: self._navegar("alertas"))
+            ("🔔 Alertas", lambda: self._navegar("alertas")),
+            ("🧑 Meu Perfil", lambda: self._navegar("perfil_admin"))
         ]
         self.definir_opcoes_menu(opcoes)
     
@@ -136,7 +138,8 @@ class MenuMorador(MenuLateral):
             ("👥 Moradores", lambda: self._navegar("moradores")),
             ("💰 Dívidas", lambda: self._navegar("dividas")),
             ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
-            ("🔔 Alertas", lambda: self._navegar("alertas"))
+            ("🔔 Alertas", lambda: self._navegar("alertas")),
+            ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
         ]
         self.definir_opcoes_menu(opcoes)
     

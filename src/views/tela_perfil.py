@@ -46,14 +46,15 @@ class TelaComMenuLateral(ComponenteBase):
         self.secao_atual = secao
         self._limpar_conteudo()
         
-        if secao == "perfil_admin":
-            self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
-        elif secao == "moradores":
-            self.controlador_sistema.controlador_morador.abre_tela(self)
-        elif secao == "quartos":
-            self.controlador_sistema.controlador_quarto.abre_tela(self)
-        else:
-            self._mostrar_em_desenvolvimento(secao)
+        match secao:
+            case "perfil_admin":
+                self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
+            case "moradores":
+                self.controlador_sistema.controlador_morador.abre_tela(self)
+            case "quartos":
+                self.controlador_sistema.controlador_quarto.abre_tela(self)
+            case _: 
+                self._mostrar_em_desenvolvimento(secao)
     
     def _limpar_conteudo(self):
         for widget in self.content_frame.winfo_children():
