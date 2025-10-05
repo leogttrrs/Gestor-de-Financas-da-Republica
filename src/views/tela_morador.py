@@ -135,7 +135,7 @@ class TelaMorador(ComponenteBase):
         if self.on_logout:
             self.on_logout()
     
-    class TelaCadastroMorador(TelaCadastroBase):
+class TelaCadastroMorador(TelaCadastroBase):
     
     def get_titulo(self):
         return "Cadastrar Novo Morador"

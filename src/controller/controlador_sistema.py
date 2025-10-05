@@ -96,6 +96,10 @@ class ControladorSistema:
     def gerenciar_administradores(self):
         self.__controlador_administrador.abre_tela()
 
+    # revisar
+    def gerenciar_moradores(self):
+        self.__controlador_morador.abre_tela()
+
     @staticmethod
     def encerra_sistema():
         exit(0)
