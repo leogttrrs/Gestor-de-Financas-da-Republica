@@ -5,15 +5,15 @@ from typing import Tuple
 
 
 class Validador:
-    VALIDAR_CPF = False
-    VALIDAR_DATA_NASCIMENTO = False
-    VALIDAR_NOME = False
-    VALIDAR_TELEFONE = False
-    VALIDAR_EMAIL = False
-    VALIDAR_SENHA = False
-    VALIDAR_DADOS_USUARIO = False
-    VALIDAR_PRECO = False
-    VALIDAR_CODIGO = False
+    VALIDAR_CPF = True
+    VALIDAR_DATA_NASCIMENTO = True
+    VALIDAR_NOME = True
+    VALIDAR_TELEFONE = True
+    VALIDAR_EMAIL = True
+    VALIDAR_SENHA = True
+    VALIDAR_DADOS_USUARIO = True
+    VALIDAR_PRECO = True
+    VALIDAR_CODIGO = True
 
     @staticmethod
     def validar_cpf(cpf=None):
@@ -107,10 +107,13 @@ class Validador:
 
         telefone_limpo = re.sub(r'[^0-9]', '', telefone)
         
-        if len(telefone_limpo) not in [10, 11] or not telefone_limpo.isdigit():
-            return "Telefone inválido."
+        if not telefone_limpo.isdigit():
+            return "Telefone inválido. Digite apenas números."
+        
+        if len(telefone_limpo) not in [10, 11]:
+            return "Telefone inválido. Use formato: ddnnnnnnnn (10 dígitos) ou ddnnnnnnnnn (11 dígitos)."
 
-        return telefone
+        return telefone_limpo
 
     @staticmethod
     def validar_email(email):
@@ -120,18 +123,18 @@ class Validador:
         if not Validador.VALIDAR_EMAIL:
             return email
 
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        pattern = r'^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(pattern, email):
             return "Email inválido."
 
         return email
 
     @staticmethod
-    def validar_dados_usuario(cpf, nome, email, telefone, genero):
+    def validar_dados_usuario(cpf, nome, email, telefone):
         if not Validador.VALIDAR_DADOS_USUARIO:
             return True, "Dados válidos"
 
-        if not cpf or not nome or not email or not telefone or not genero:
+        if not cpf or not nome or not email or not telefone:
             return False, "Todos os campos são obrigatórios"
         
         cpf_validado = Validador.validar_cpf(cpf)
@@ -149,9 +152,6 @@ class Validador:
         telefone_validado = Validador.validar_telefone(telefone)
         if "inválido" in str(telefone_validado):
             return False, "Telefone inválido"
-        
-        if genero.lower() not in ['masculino', 'feminino']:
-            return False, "Gênero deve ser 'masculino' ou 'feminino'"
         
         return True, "Dados válidos"
 
