@@ -1,93 +1,26 @@
 from src.models.usuario import Usuario
 from src.database.database_manager import DatabaseManager
 from typing import Optional, Tuple
-import sqlite3
 
 
 class Administrador(Usuario):
-    def __init__(self, cpf: str, nome: str, email: str, telefone: str, genero: str, senhaCriptografada: str = None, id: int = None):
-        super().__init__(cpf, nome, email, telefone, genero, senhaCriptografada, id)
-
+    def __init__(self, cpf: str, nome: str, email: str, telefone: str, senhaCriptografada: str = None, id: int = None):
+        super().__init__(cpf, nome, email, telefone, 'administrador', senhaCriptografada, id)
 
     def salvar(self) -> Tuple[bool, str]:
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                
-                cursor.execute("SELECT id FROM usuario WHERE cpf = ?", (self.cpf,))
-                if cursor.fetchone():
-                    return False, "CPF já cadastrado no sistema"
-                
-                valido, mensagem = self.validar_dados()
-                if not valido:
-                    return False, mensagem
-                
-                if self.senhaCriptografada is None:
-                    return False, "Senha é obrigatória"
-                
-                cursor.execute("""
-                    INSERT INTO usuario (cpf, nome, email, telefone, genero, senhaCriptografada) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (self.cpf, self.nome, self.email, self.telefone, self.genero, self.senhaCriptografada))
-                
-                usuario_id = cursor.lastrowid
-                
-                cursor.execute("INSERT INTO administrador (id) VALUES (?)", (usuario_id,))
-                
-                self.id = usuario_id
-                return True, "Administrador cadastrado com sucesso"
-                
-        except sqlite3.Error as e:
-            return False, f"Erro ao salvar administrador: {str(e)}"
+        return Usuario.salvar_usuario(self)
 
     def atualizar(self) -> Tuple[bool, str]:
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                
-                cursor.execute("SELECT id FROM usuario WHERE cpf = ? AND id != ?", (self.cpf, self.id))
-                if cursor.fetchone():
-                    return False, "CPF já está sendo usado por outro usuário"
-                
-                valido, mensagem = self.validar_dados()
-                if not valido:
-                    return False, mensagem
-
-                cursor.execute("""
-                    UPDATE usuario 
-                    SET nome = ?, email = ?, telefone = ?, genero = ?, senhaCriptografada = ? 
-                    WHERE id = ?
-                """, (self.nome, self.email, self.telefone, self.genero, self.senhaCriptografada, self.id))
-
-                if cursor.rowcount > 0:
-                    return True, "Perfil atualizado com sucesso"
-                else:
-                    return False, "Administrador não encontrado para atualizar"
-
-        except sqlite3.Error as e:
-            return False, f"Erro ao atualizar administrador: {str(e)}"
+        return Usuario.atualizar_usuario(self)
 
     def excluir(self) -> Tuple[bool, str]:
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                
-                cursor.execute("DELETE FROM administrador WHERE id = ?", (self.id,))
-                cursor.execute("DELETE FROM usuario WHERE id = ?", (self.id,))
-                
-                if cursor.rowcount > 0:
-                    return True, "Administrador excluído com sucesso"
-                else:
-                    return False, "Administrador não encontrado"
-                    
-        except sqlite3.Error as e:
-            return False, f"Erro ao excluir administrador: {str(e)}"
+        return Usuario.excluir_usuario(self.cpf)
 
     @staticmethod
     def existe_algum() -> bool:
         try:
             db_manager = DatabaseManager()
-            resultado = db_manager.executar_query("SELECT 1 FROM administrador LIMIT 1")
+            resultado = db_manager.executar_query("SELECT 1 FROM usuario WHERE tipo_usuario = 'administrador' LIMIT 1")
             return len(resultado) > 0
         except Exception as e:
             return False
@@ -98,58 +31,13 @@ class Administrador(Usuario):
             with DatabaseManager() as db:
                 cursor = db.cursor()
                 cursor.execute("""
-                    SELECT id, cpf, nome, email, telefone, genero, senha_hash 
-                    FROM usuarios 
+                    SELECT id, cpf, nome, email, telefone, tipo_usuario, senhaCriptografada
+                    FROM usuario
                     WHERE id = ? AND tipo_usuario = 'administrador'
                 """, (id,))
-                
                 row = cursor.fetchone()
                 if row:
-                    admin = Administrador(row[0], row[1], row[2], row[3], row[4], row[5], "", row[6])
-                    return admin
-                return None
-                
-        except Exception:
-            return None
-
-    @staticmethod
-    def buscar_por_cpf(cpf: str) -> Optional['Administrador']:
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                cursor.execute("""
-                    SELECT u.id, u.cpf, u.nome, u.email, u.telefone, u.genero, u.senhaCriptografada 
-                    FROM usuario u
-                    INNER JOIN administrador a ON u.id = a.id 
-                    WHERE u.cpf = ?
-                """, (cpf,))
-                
-                row = cursor.fetchone()
-                if row:
-                    admin = Administrador(row[1], row[2], row[3], row[4], row[5], row[6], row[0])
-                    return admin
-                return None
-                
-        except Exception:
-            return None
-
-    @staticmethod
-    def autenticar(cpf: str, senha: str) -> Optional['Administrador']:
-        try:
-            with DatabaseManager() as db:
-                cursor = db.cursor()
-                
-                admin = Administrador.buscar_por_cpf(cpf)
-                if not admin:
-                    return None
-                
-                senha_hash = admin.hash_senha(senha)
-                cursor.execute("""
-                    SELECT id FROM usuarios 
-                    WHERE cpf = ? AND senha_hash = ? AND tipo_usuario = 'administrador'
-                """, (cpf, senha_hash))
-                
-                if cursor.fetchone():
+                    admin = Administrador(row['cpf'], row['nome'], row['email'], row['telefone'], row['senhaCriptografada'], row['id'])
                     return admin
                 return None
                 
@@ -163,6 +51,6 @@ class Administrador(Usuario):
             'nome': self.nome,
             'email': self.email,
             'telefone': self.telefone,
-            'genero': self.genero,
+            'tipo_usuario': self.tipo_usuario,
             'senhaCriptografada': self.senhaCriptografada
         }
