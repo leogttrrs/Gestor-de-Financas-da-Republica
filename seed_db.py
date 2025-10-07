@@ -1,5 +1,5 @@
 from src.database import DatabaseManager
-import hashlib
+from src.utils.validador import Validador
 from datetime import date
 
 
@@ -9,12 +9,9 @@ def popular_banco():
 
     print("\n[Passo 1 de 3] Criando moradores...")
     moradores_para_criar = [
-        {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '48999887766',
-         'genero': 'masculino', 'senha': 'senha123'},
-        {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '48988776655',
-         'genero': 'feminino', 'senha': 'senha123'},
-        {'cpf': '99988877766', 'nome': 'Carlos Pereira', 'email': 'carlos@email.com', 'telefone': '48977665544',
-         'genero': 'masculino', 'senha': 'senha123'}
+        {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '48999887766', 'senha': 'senha123'},
+        {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '48988776655', 'senha': 'senha123'},
+        {'cpf': '99988877766', 'nome': 'Carlos Pereira', 'email': 'carlos@email.com', 'telefone': '48977665544', 'senha': 'senha123'}
     ]
 
     moradores_ids = {}
@@ -28,14 +25,11 @@ def popular_banco():
                 usuario_id = resultado[0]['id']
                 print(f"  - Morador '{dados_morador['nome']}' já existe (ID: {usuario_id}).")
             else:
-                senha_hash = hashlib.sha256(dados_morador['senha'].encode()).hexdigest()
-                comando_usuario = "INSERT INTO usuario (cpf, nome, email, telefone, genero, senhaCriptografada) VALUES (?, ?, ?, ?, ?, ?)"
+                senha_hash = Validador.hash_senha(dados_morador['senha'])
+                comando_usuario = "INSERT INTO usuario (cpf, nome, email, telefone, tipo_usuario, senhaCriptografada) VALUES (?, ?, ?, ?, ?, ?)"
                 params_usuario = (dados_morador['cpf'], dados_morador['nome'], dados_morador['email'],
-                                  dados_morador['telefone'], dados_morador['genero'], senha_hash)
+                                  dados_morador['telefone'], 'morador', senha_hash)
                 usuario_id = db_manager.executar_comando(comando_usuario, params_usuario)
-
-                comando_morador = "INSERT INTO morador (id) VALUES (?)"
-                db_manager.executar_comando(comando_morador, (usuario_id,))
                 print(f"  - Morador '{dados_morador['nome']}' criado com sucesso (ID: {usuario_id}).")
 
             moradores_ids[dados_morador['nome']] = usuario_id
@@ -47,15 +41,39 @@ def popular_banco():
     print("\n[Passo 2 de 3] Criando quarto de teste...")
     quarto_id = None
     try:
-        query_quarto = "SELECT id FROM quarto WHERE numero_quarto = ? AND republica_id = 1"
-        resultado = db_manager.executar_query(query_quarto, (100,))
+        admin_cpf = '00000000000'
+        query_admin = "SELECT id FROM usuario WHERE cpf = ? AND tipo_usuario = 'administrador'"
+        resultado_admin = db_manager.executar_query(query_admin, (admin_cpf,))
+
+        if resultado_admin:
+            admin_id = resultado_admin[0]['id']
+            print(f"  - Administrador existente encontrado (ID: {admin_id}).")
+        else:
+            senha_admin = Validador.hash_senha('admin123')
+            comando_admin = "INSERT INTO usuario (cpf, nome, email, telefone, tipo_usuario, senhaCriptografada) VALUES (?, ?, ?, ?, ?, ?)"
+            params_admin = (admin_cpf, 'Admin Teste', 'admin@republica.com', '0000000000', 'administrador', senha_admin)
+            admin_id = db_manager.executar_comando(comando_admin, params_admin)
+            print(f"  - Administrador de teste criado (ID: {admin_id}).")
+
+        query_rep = "SELECT id FROM republica WHERE administrador_id = ?"
+        resultado_rep = db_manager.executar_query(query_rep, (admin_id,))
+        if resultado_rep:
+            republica_id = resultado_rep[0]['id']
+            print(f"  - República já existe (ID: {republica_id}).")
+        else:
+            comando_rep = "INSERT INTO republica (nome, administrador_id) VALUES (?, ?)"
+            republica_id = db_manager.executar_comando(comando_rep, ('Republica Teste', admin_id))
+            print(f"  - República criada (ID: {republica_id}).")
+
+        query_quarto = "SELECT id FROM quarto WHERE numero_quarto = ? AND republica_id = ?"
+        resultado = db_manager.executar_query(query_quarto, (100, republica_id))
 
         if resultado:
             quarto_id = resultado[0]['id']
             print(f"  - Quarto 100 já existe (ID: {quarto_id}).")
         else:
             comando_quarto = "INSERT INTO quarto (numero_quarto, tamanho, republica_id) VALUES (?, ?, ?)"
-            params_quarto = (100, 12, 1)
+            params_quarto = (100, 12, republica_id)
             quarto_id = db_manager.executar_comando(comando_quarto, params_quarto)
             print(f"  - Quarto 100 criado com sucesso (ID: {quarto_id}).")
     except Exception as e:

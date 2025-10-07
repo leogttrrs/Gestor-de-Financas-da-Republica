@@ -243,14 +243,6 @@ class TelaCadastroAdministrador(TelaCadastroBase):
         self.campos["nome"].bind("<FocusIn>", lambda e: self._limpar_placeholder(self.campos["nome"], "Digite seu nome completo"))
         self.campos["nome"].bind("<FocusOut>", lambda e: self._restaurar_placeholder(self.campos["nome"], "Digite seu nome completo"))
         
-        genero_label = ttk.Label(parent, text="Gênero", font=("Arial", 10), 
-                               background="white", foreground="#333333")
-        genero_label.pack(anchor="w", pady=(0, 5))
-        
-        self.campos["genero"] = ttk.Combobox(parent, font=("Arial", 11), 
-                                           values=["Masculino", "Feminino"], state="readonly", width=37)
-        self.campos["genero"].pack(fill="x", pady=(0, 15), ipady=8)
-        self.campos["genero"].set("")
         
         cpf_label = ttk.Label(parent, text="CPF", font=("Arial", 10), 
                             background="white", foreground="#333333")
@@ -342,7 +334,6 @@ class TelaCadastroAdministrador(TelaCadastroBase):
         cpf = self.campos["cpf"].get()
         email = self.campos["email"].get()
         telefone = self.campos["telefone"].get()
-        genero = self.campos["genero"].get()
         senha = self.campos["senha"].get()
         confirmar_senha = self.campos["confirmar_senha"].get()
         
@@ -353,9 +344,6 @@ class TelaCadastroAdministrador(TelaCadastroBase):
             messagebox.showerror("Erro", "Por favor, preencha todos os campos")
             return None
         
-        if not genero:
-            messagebox.showerror("Erro", "Por favor, selecione o gênero")
-            return None
         
         if senha != confirmar_senha:
             messagebox.showerror("Erro", "As senhas não coincidem")
@@ -366,15 +354,14 @@ class TelaCadastroAdministrador(TelaCadastroBase):
             "cpf": cpf,
             "email": email,
             "telefone": telefone,
-            "genero": genero.lower(),
             "senha": senha
         }
     
     def executar_cadastro(self, dados):
         if self.controlador_sistema:
             return self.controlador_sistema.controlador_administrador.cadastrar_administrador(
-                dados["cpf"], dados["nome"], dados["email"], 
-                dados["telefone"], dados["genero"], dados["senha"]
+                dados["cpf"], dados["nome"], dados["email"],
+                dados["telefone"], dados["senha"]
             )
         return False, "Sistema não disponível"
 
@@ -395,12 +382,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         self.campos["cpf"] = self._criar_campo(parent, "CPF")
         self.campos["email"] = self._criar_campo(parent, "E-mail")
         self.campos["telefone"] = self._criar_campo(parent, "Telefone")
-        
-        self.campos["genero"] = ttk.Combobox(parent, font=("Arial", 12), 
-                                           values=["Masculino", "Feminino"], state="readonly")
-        self.campos["genero"].pack(pady=(0, 15), ipady=8, fill="x")
-        self.campos["genero"].set("Selecione o gênero")
-        
         self.campos["quarto"] = self._criar_campo(parent, "Número do Quarto")
         self.campos["senha"] = self._criar_campo(parent, "Senha", show="*")
         self.campos["confirmar_senha"] = self._criar_campo(parent, "Confirmar senha", show="*")
@@ -410,7 +391,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         cpf = self.campos["cpf"].get()
         email = self.campos["email"].get()
         telefone = self.campos["telefone"].get()
-        genero = self.campos["genero"].get()
         quarto = self.campos["quarto"].get()
         senha = self.campos["senha"].get()
         confirmar_senha = self.campos["confirmar_senha"].get()
@@ -419,10 +399,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         
         if any(campo in placeholders for campo in [nome, cpf, email, telefone, quarto, senha, confirmar_senha]):
             messagebox.showerror("Erro", "Por favor, preencha todos os campos")
-            return None
-        
-        if genero == "Selecione o gênero":
-            messagebox.showerror("Erro", "Por favor, selecione o gênero")
             return None
         
         if senha != confirmar_senha:
@@ -440,7 +416,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
             "cpf": cpf,
             "email": email,
             "telefone": telefone,
-            "genero": genero.lower(),
             "numero_quarto": quarto_num,
             "senha": senha
         }
@@ -485,11 +460,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         self.entry_cpf = self._criar_campo(fields_frame, "CPF")
         self.entry_email = self._criar_campo(fields_frame, "Email")
         self.entry_telefone = self._criar_campo(fields_frame, "Telefone")
-        
-        self.combo_genero = ttk.Combobox(fields_frame, font=("Arial", 12), 
-                                       values=["Masculino", "Feminino"], state="readonly")
-        self.combo_genero.pack(pady=(0, 15), ipady=8, fill="x")
-        self.combo_genero.set("Selecione o gênero")
         
         self.entry_senha = self._criar_campo(fields_frame, "Senha", show="*")
         self.entry_confirmar_senha = self._criar_campo(fields_frame, "Confirmar senha", show="*")
@@ -545,7 +515,6 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
         cpf = self.entry_cpf.get()
         email = self.entry_email.get()
         telefone = self.entry_telefone.get()
-        genero = self.combo_genero.get()
         senha = self.entry_senha.get()
         confirmar_senha = self.entry_confirmar_senha.get()
         
@@ -554,17 +523,13 @@ class TelaCadastroMoradorBase(TelaCadastroBase):
             messagebox.showerror("Erro", "Por favor, preencha todos os campos")
             return
         
-        if genero == "Selecione o gênero":
-            messagebox.showerror("Erro", "Por favor, selecione o gênero")
-            return
-        
         if senha != confirmar_senha:
             messagebox.showerror("Erro", "As senhas não coincidem")
             return
         
         if self.controlador_sistema:
             sucesso, mensagem = self.controlador_sistema.controlador_administrador.cadastrar_administrador(
-                cpf, nome, email, telefone, genero.lower(), senha
+                cpf, nome, email, telefone, senha
             )
             
             if sucesso:
