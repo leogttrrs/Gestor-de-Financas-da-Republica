@@ -48,7 +48,11 @@ class TelaComMenuLateral(ComponenteBase):
         
         match secao:
             case "perfil_admin":
-                self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
+                # abrir perfil de administrador (se disponível)
+                if hasattr(self.controlador_sistema, 'controlador_administrador'):
+                    self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
+                else:
+                    self._mostrar_em_desenvolvimento('perfil_admin')
             case "moradores":
                 self.controlador_sistema.controlador_morador.abre_tela(self)
             case "quartos":
@@ -61,7 +65,13 @@ class TelaComMenuLateral(ComponenteBase):
             widget.destroy()
     
     def _mostrar_conteudo_inicial(self):
-        self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
+        if self.tipo_usuario == 'admin':
+            if hasattr(self.controlador_sistema, 'controlador_administrador'):
+                self.controlador_sistema.controlador_administrador.abrir_tela_perfil(self)
+            else:
+                self._mostrar_em_desenvolvimento('perfil_admin')
+        else:
+            self._mostrar_em_desenvolvimento('meu_perfil')
     
     def _mostrar_dashboard(self):
         self._mostrar_em_desenvolvimento("Quartos")

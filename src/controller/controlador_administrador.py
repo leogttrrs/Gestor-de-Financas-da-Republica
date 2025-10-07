@@ -1,33 +1,26 @@
 from .abstract_controlador import AbstractControlador
 from src.models.Administrador import Administrador
 from src.models.Republica import Republica
-from src.utils.validador import Validador
 from typing import Tuple, Optional
-from tkinter import messagebox
 
 
 class ControladorAdministrador(AbstractControlador):
-
     def __init__(self, controlador_sistema):
         super().__init__(controlador_sistema)
 
-    def cadastrar_administrador(self, cpf: str, nome: str, email: str, telefone: str, genero: str, senha: str) -> Tuple[bool, str]:
+    def cadastrar_administrador(self, cpf: str, nome: str, email: str, telefone: str, senha: str) -> Tuple[bool, str]:
         try:
             if Administrador.existe_algum():
                 return False, "Já existe um administrador no sistema. Não é possível criar outro."
+            admin_para_salvar = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone,
+                                              senhaCriptografada=None)
 
-            valido, mensagem = Validador.validar_dados_usuario(cpf, nome, email, telefone, genero)
+            admin_para_salvar.senhaCriptografada = admin_para_salvar.hash_senha(senha)
+
+            valido, mensagem = admin_para_salvar.validar_dados()
             if not valido:
                 return False, mensagem
-            
-            senha_valida, msg_senha = Validador.validar_senha(senha)
-            if not senha_valida:
-                return False, msg_senha
-            
-            senha_hash = Validador.hash_senha(senha)
 
-            admin_para_salvar = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone,
-                                              genero=genero, senhaCriptografada=senha_hash)
             sucesso, mensagem = admin_para_salvar.salvar()
 
             if sucesso:
@@ -61,27 +54,23 @@ class ControladorAdministrador(AbstractControlador):
         except Exception:
             return None
 
-    def editar_administrador(self, admin_id: int, cpf: str, nome: str, email: str, telefone: str, genero: str, senha: str = None) -> Tuple[bool, str]:
+    def editar_administrador(self, admin_id: int, cpf: str, nome: str, email: str, telefone: str, senha: str = None) -> Tuple[bool, str]:
         try:
             admin = self.buscar_administrador_por_id(admin_id)
             if not admin:
                 return False, "Administrador não encontrado"
             
-            valido, mensagem = Validador.validar_dados_usuario(cpf, nome, email, telefone, genero)
-            if not valido:
-                return False, mensagem
-            
             admin.cpf = cpf
             admin.nome = nome
             admin.email = email
             admin.telefone = telefone
-            admin.genero = genero
+            
+            valido, mensagem = admin.validar_dados()
+            if not valido:
+                return False, mensagem
             
             if senha:
-                senha_valida, msg_senha = Validador.validar_senha(senha)
-                if not senha_valida:
-                    return False, msg_senha
-                admin.senhaCriptografada = Validador.hash_senha(senha)
+                admin.senhaCriptografada = admin.hash_senha(senha)
             
             sucesso, mensagem = admin.atualizar()
             if sucesso:
@@ -174,22 +163,16 @@ class ControladorAdministrador(AbstractControlador):
                 tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
                 return
             
-            valido, mensagem = Validador.validar_dados_usuario(
-                usuario_logado.cpf, 
-                dados['nome'], 
-                dados['email'], 
-                dados['telefone'], 
-                usuario_logado.genero
-            )
-            if not valido:
-                tela_perfil.mostrar_mensagem_erro(mensagem)
-                return
-            
             admin = Administrador.buscar_por_cpf(usuario_logado.cpf)
             if admin:
                 admin.nome = dados['nome']
                 admin.email = dados['email']
                 admin.telefone = dados['telefone']
+                
+                valido, mensagem = admin.validar_dados()
+                if not valido:
+                    tela_perfil.mostrar_mensagem_erro(mensagem)
+                    return
                 
                 sucesso, mensagem = admin.atualizar()
                 if sucesso:

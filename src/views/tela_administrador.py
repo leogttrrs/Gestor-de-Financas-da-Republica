@@ -186,12 +186,6 @@ class TelaCadastroMorador(TelaCadastroBase):
         self.campos["cpf"] = self._criar_campo(parent, "CPF")
         self.campos["email"] = self._criar_campo(parent, "E-mail")
         self.campos["telefone"] = self._criar_campo(parent, "Telefone")
-        
-        self.campos["genero"] = ttk.Combobox(parent, font=("Arial", 12), 
-                                           values=["Masculino", "Feminino"], state="readonly")
-        self.campos["genero"].pack(pady=(0, 15), ipady=8, fill="x")
-        self.campos["genero"].set("Selecione o gênero")
-        
         self.campos["numero_quarto"] = self._criar_campo(parent, "Número do Quarto")
         self.campos["senha"] = self._criar_campo(parent, "Senha", show="*")
         self.campos["confirmar_senha"] = self._criar_campo(parent, "Confirmar senha", show="*")
@@ -201,7 +195,6 @@ class TelaCadastroMorador(TelaCadastroBase):
         cpf = self.campos["cpf"].get()
         email = self.campos["email"].get()
         telefone = self.campos["telefone"].get()
-        genero = self.campos["genero"].get()
         numero_quarto = self.campos["numero_quarto"].get()
         senha = self.campos["senha"].get()
         confirmar_senha = self.campos["confirmar_senha"].get()
@@ -210,10 +203,6 @@ class TelaCadastroMorador(TelaCadastroBase):
         
         if any(campo in placeholders for campo in [nome, cpf, email, telefone, numero_quarto, senha, confirmar_senha]):
             messagebox.showerror("Erro", "Por favor, preencha todos os campos")
-            return None
-        
-        if genero == "Selecione o gênero":
-            messagebox.showerror("Erro", "Por favor, selecione o gênero")
             return None
         
         if senha != confirmar_senha:
@@ -231,7 +220,6 @@ class TelaCadastroMorador(TelaCadastroBase):
             "cpf": cpf,
             "email": email,
             "telefone": telefone,
-            "genero": genero.lower(),
             "numero_quarto": quarto_num,
             "senha": senha
         }
