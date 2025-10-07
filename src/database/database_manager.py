@@ -39,18 +39,10 @@ class DatabaseManager:
                     nome TEXT NOT NULL,
                     email TEXT NOT NULL,
                     telefone TEXT NOT NULL,
-                    genero TEXT NOT NULL CHECK (genero IN ('masculino', 'feminino')),
+                    tipo_usuario TEXT NOT NULL CHECK (tipo_usuario IN ('administrador','morador')),
                     senhaCriptografada TEXT NOT NULL,
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Tabela Administrador
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS administrador (
-                    id INTEGER PRIMARY KEY,
-                    FOREIGN KEY (id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
 
@@ -61,7 +53,7 @@ class DatabaseManager:
                                 nome TEXT NOT NULL,
                                 administrador_id INTEGER NOT NULL UNIQUE, -- Adicionado
                                 data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                FOREIGN KEY (administrador_id) REFERENCES administrador(id) ON DELETE CASCADE
+                                FOREIGN KEY (administrador_id) REFERENCES usuario(id) ON DELETE CASCADE
                             )
                         """)
 
@@ -78,13 +70,6 @@ class DatabaseManager:
                             )
                         """)
 
-            # Tabela Morador
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS morador (
-                    id INTEGER PRIMARY KEY,
-                    FOREIGN KEY (id) REFERENCES usuario(id) ON DELETE CASCADE
-                )
-            """)
 
             # Tabela Contrato
             cursor.execute("""
@@ -98,7 +83,7 @@ class DatabaseManager:
                     status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'finalizado')),
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (quarto_id) REFERENCES quarto(id),
-                    FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
+                    FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
 
@@ -107,12 +92,13 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS divida (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     morador_id INTEGER NOT NULL,
-                    valor_original DECIMAL(10,2) NOT NULL,
-                    valor_pendente DECIMAL(10,2) NOT NULL,
-                    descricao TEXT NOT NULL,
+                    valor DECIMAL(10,2) NOT NULL,
+                    descricao TEXT,
                     status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'paga', 'vencida')),
+                    recorrencia_id INTEGER,
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
+                    FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE,
+                    FOREIGN KEY (recorrencia_id) REFERENCES recorrencia(id) ON DELETE SET NULL
                 )
             """)
 
@@ -127,17 +113,6 @@ class DatabaseManager:
                     descricao TEXT,
                     ativo BOOLEAN NOT NULL DEFAULT 1,
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Tabela de relacionamento entre Divida e Recorrencia
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS divida_recorrencia (
-                    divida_id INTEGER NOT NULL,
-                    recorrencia_id INTEGER NOT NULL,
-                    PRIMARY KEY (divida_id, recorrencia_id),
-                    FOREIGN KEY (divida_id) REFERENCES divida(id) ON DELETE CASCADE,
-                    FOREIGN KEY (recorrencia_id) REFERENCES recorrencia(id) ON DELETE CASCADE
                 )
             """)
 
@@ -164,7 +139,7 @@ class DatabaseManager:
                     status BOOL NOT NULL,
                     prioridade TEXT NOT NULL DEFAULT 'media' CHECK (prioridade IN ('baixa', 'media', 'alta', 'urgente')),
                     categoria TEXT,
-                    FOREIGN KEY (morador_id) REFERENCES morador(id) ON DELETE CASCADE
+                    FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
 
@@ -226,9 +201,9 @@ class DatabaseManager:
     def obter_estatisticas(self) -> Dict[str, int]:
         estatisticas = {}
         tabelas = [
-            'usuario', 'administrador', 'morador', 'republica',
+            'usuario', 'republica',
             'quarto', 'contrato', 'divida', 'pagamento',
-            'ocorrencia', 'alerta', 'recorrencia', 'divida_recorrencia'
+            'ocorrencia', 'alerta', 'recorrencia'
         ]
 
         with self._obter_conexao() as conn:
