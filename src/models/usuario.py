@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
-import hashlib
+from typing import Tuple, Optional
 from ..utils.validador import Validador
+from ..database.database_manager import DatabaseManager
 
 
 class Usuario(ABC):
     @abstractmethod
-    def __init__(self, cpf: str, nome: str, email: str, telefone: str, genero: str, senhaCriptografada: str = None, id: int = None):
+    def __init__(self, cpf: str, nome: str, email: str, telefone: str, tipo_usuario: str, senhaCriptografada: str = None, id: int = None,):
         self.__id = None
         self.__cpf = None
         self.__nome = None
         self.__email = None
         self.__telefone = None
-        self.__genero = None
+        self.__tipo_usuario = None
         self.__senhaCriptografada = None
         if isinstance(id, int) or id is None:
             self.__id = id
@@ -24,8 +24,8 @@ class Usuario(ABC):
             self.__email = email
         if isinstance(telefone, str):
             self.__telefone = telefone
-        if isinstance(genero, str) and genero in ['masculino', 'feminino']:
-            self.__genero = genero
+        if isinstance(tipo_usuario, str) and tipo_usuario in ['administrador', 'morador']:
+            self.__tipo_usuario = tipo_usuario
         if isinstance(senhaCriptografada, str) or senhaCriptografada is None:
             self.__senhaCriptografada = senhaCriptografada
 
@@ -66,13 +66,13 @@ class Usuario(ABC):
             self.__telefone = telefone
 
     @property
-    def genero(self) -> str:
-        return self.__genero
+    def tipo_usuario(self) -> str:
+        return self.__tipo_usuario
 
-    @genero.setter
-    def genero(self, genero):
-        if isinstance(genero, str) and genero in ['masculino', 'feminino']:
-            self.__genero = genero
+    @tipo_usuario.setter
+    def tipo_usuario(self, tipo: str):
+        if isinstance(tipo, str) and tipo in ['administrador', 'morador']:
+            self.__tipo_usuario = tipo
 
     @property
     def id(self) -> int:
@@ -106,24 +106,131 @@ class Usuario(ABC):
 
     def validar_dados(self) -> Tuple[bool, str]:
         return Validador.validar_dados_usuario(
-            self.__cpf, 
-            self.__nome, 
-            self.__email, 
-            self.__telefone, 
-            self.__genero
+            self.__cpf,
+            self.__nome,
+            self.__email,
+            self.__telefone
         )
 
-    @abstractmethod
-    def salvar(self) -> Tuple[bool, str]:
-        pass
+    @staticmethod
+    def salvar_usuario(usuario: 'Usuario') -> Tuple[bool, str]:
+        try:
+            valido, mensagem = usuario.validar_dados()
+            if not valido:
+                return False, mensagem
+            
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                
+                cursor.execute("""
+                    INSERT INTO usuario (cpf, nome, email, telefone, tipo_usuario, senhaCriptografada)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (usuario.cpf, usuario.nome, usuario.email, usuario.telefone,
+                      usuario.tipo_usuario, usuario.senhaCriptografada))
+                
+                usuario_id = cursor.lastrowid
+                usuario.id = usuario_id
+                return True, f"{usuario.tipo_usuario} salvo com sucesso"
+                
+        except Exception as e:
+            tipo = usuario.tipo_usuario if usuario and hasattr(usuario, 'tipo_usuario') else 'usuário'
+            return False, f"Erro ao salvar {tipo}: {str(e)}"
 
-    @abstractmethod
-    def atualizar(self) -> Tuple[bool, str]:
-        pass
+    @staticmethod
+    def atualizar_usuario(usuario: 'Usuario') -> Tuple[bool, str]:
+        try:
+            valido, mensagem = usuario.validar_dados()
+            if not valido:
+                return False, mensagem
+            
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    UPDATE usuario 
+                    SET cpf = ?, nome = ?, email = ?, telefone = ?, senhaCriptografada = ?
+                    WHERE id = ?
+                """, (usuario.cpf, usuario.nome, usuario.email, usuario.telefone,
+                      usuario.senhaCriptografada, usuario.id))
+                
+                if cursor.rowcount > 0:
+                    return True, f"{usuario.tipo_usuario} atualizado com sucesso"
+                else:
+                    return False, f"{usuario.tipo_usuario} não encontrado"
+                    
+        except Exception as e:
+            tipo = usuario.tipo_usuario if usuario and hasattr(usuario, 'tipo_usuario') else 'usuário'
+            return False, f"Erro ao atualizar {tipo}: {str(e)}"
 
-    @abstractmethod
-    def excluir(self) -> Tuple[bool, str]:
-        pass
+    @staticmethod
+    def excluir_usuario(cpf: str) -> Tuple[bool, str]:
+        try:
+            usuario = Usuario.buscar_por_cpf(cpf)
+            if not usuario:
+                return False, f"Usuário não encontrado"
+            
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    DELETE FROM usuario WHERE id = ?
+                """, (usuario.id,))
+                
+                if cursor.rowcount > 0:
+                    return True, f"{usuario.tipo_usuario} excluído com sucesso"
+                else:
+                    return False, f"Erro ao excluir {usuario.tipo_usuario}"
+                    
+        except Exception as e:
+            return False, f"Erro ao excluir usuário: {str(e)}"
+
+    @staticmethod
+    def buscar_por_cpf(cpf: str) -> Optional['Usuario']:
+        try:
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    SELECT id, cpf, nome, email, telefone, tipo_usuario, senhaCriptografada
+                    FROM usuario
+                    WHERE cpf = ?
+                """, (cpf,))
+                row = cursor.fetchone()
+                if row:
+                    tipo = row['tipo_usuario']
+                    senha = row['senhaCriptografada']
+                    usuario_id = row['id']
+                    if tipo == 'administrador':
+                        from .Administrador import Administrador
+                        return Administrador(row['cpf'], row['nome'], row['email'], row['telefone'], senha, usuario_id)
+                    elif tipo == 'morador':
+                        from .Morador import Morador
+                        return Morador(row['cpf'], row['nome'], row['email'], row['telefone'], senha, usuario_id)
+                return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def alterar_senha(cpf: str, nova_senha: str) -> Tuple[bool, str]:
+        try:
+            usuario = Usuario.buscar_por_cpf(cpf)
+            if not usuario:
+                return False, "Usuário não encontrado"
+            
+            senha_criptografada = Validador.hash_senha(nova_senha)
+            
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                cursor.execute("""
+                    UPDATE usuario 
+                    SET senhaCriptografada = ? 
+                    WHERE cpf = ?
+                """, (senha_criptografada, cpf))
+                
+                if cursor.rowcount > 0:
+                    return True, "Senha alterada com sucesso"
+                else:
+                    return False, "Erro ao alterar senha"
+                    
+        except Exception as e:
+            return False, f"Erro ao alterar senha: {str(e)}"
 
     def to_dict(self) -> dict:
         return {
@@ -132,6 +239,6 @@ class Usuario(ABC):
             'nome': self.nome,
             'email': self.email,
             'telefone': self.telefone,
-            'genero': self.genero,
+            'tipo_usuario': self.tipo_usuario,
             'senhaCriptografada': self.senhaCriptografada
         }
