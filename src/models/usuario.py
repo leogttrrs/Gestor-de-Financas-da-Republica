@@ -6,7 +6,7 @@ from ..database.database_manager import DatabaseManager
 
 class Usuario(ABC):
     @abstractmethod
-    def __init__(self, cpf: str, nome: str, email: str, telefone: str, tipo_usuario: str, senhaCriptografada: str = None, id: int = None,):
+    def __init__(self, cpf: str, nome: str, email: str, telefone: str, tipo_usuario: str, senhaCriptografada: str = None, id: int = None, **kwargs):
         self.__id = None
         self.__cpf = None
         self.__nome = None

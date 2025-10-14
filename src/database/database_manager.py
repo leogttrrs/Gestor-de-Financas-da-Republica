@@ -51,7 +51,7 @@ class DatabaseManager:
                             CREATE TABLE IF NOT EXISTS republica (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 nome TEXT NOT NULL,
-                                administrador_id INTEGER NOT NULL UNIQUE, -- Adicionado
+                                administrador_id INTEGER NOT NULL UNIQUE,
                                 data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                 FOREIGN KEY (administrador_id) REFERENCES usuario(id) ON DELETE CASCADE
                             )
@@ -94,13 +94,27 @@ class DatabaseManager:
                     morador_id INTEGER NOT NULL,
                     valor DECIMAL(10,2) NOT NULL,
                     descricao TEXT,
-                    status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'paga', 'vencida')),
+                    data_vencimento DATE NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'quitada')),
                     recorrencia_id INTEGER,
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE,
                     FOREIGN KEY (recorrencia_id) REFERENCES recorrencia(id) ON DELETE SET NULL
                 )
             """)
+
+            # Tabela Historico
+            cursor.execute("""
+                            CREATE TABLE IF NOT EXISTS historico (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                evento TEXT NOT NULL,
+                                morador_nome TEXT,
+                                divida_descricao TEXT,
+                                valor REAL,
+                                detalhes TEXT
+                            )
+                        """)
 
             # Tabela Recorrencia
             cursor.execute("""

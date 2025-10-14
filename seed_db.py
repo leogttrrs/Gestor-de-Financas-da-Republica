@@ -1,105 +1,104 @@
 from src.database import DatabaseManager
 from src.utils.validador import Validador
-from datetime import date
+from datetime import date, timedelta
+import sqlite3
 
 
 def popular_banco():
-    print("Populando banco de dados com dados de teste...")
+    """Insere um conjunto completo de dados de teste: admin, república, moradores, quartos, contratos e dívidas."""
+
+    print("Iniciando a população do banco de dados com dados de teste...")
     db_manager = DatabaseManager()
 
-    print("\n[Passo 1 de 3] Criando moradores...")
-    moradores_para_criar = [
-        {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '48999887766', 'senha': 'senha123'},
-        {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '48988776655', 'senha': 'senha123'},
-        {'cpf': '99988877766', 'nome': 'Carlos Pereira', 'email': 'carlos@email.com', 'telefone': '48977665544', 'senha': 'senha123'}
-    ]
-
-    moradores_ids = {}
-    for dados_morador in moradores_para_criar:
-        try:
-            # Verifica se o usuário já existe
-            query_user = "SELECT id FROM usuario WHERE cpf = ?"
-            resultado = db_manager.executar_query(query_user, (dados_morador['cpf'],))
-
-            if resultado:
-                usuario_id = resultado[0]['id']
-                print(f"  - Morador '{dados_morador['nome']}' já existe (ID: {usuario_id}).")
-            else:
-                senha_hash = Validador.hash_senha(dados_morador['senha'])
-                comando_usuario = "INSERT INTO usuario (cpf, nome, email, telefone, tipo_usuario, senhaCriptografada) VALUES (?, ?, ?, ?, ?, ?)"
-                params_usuario = (dados_morador['cpf'], dados_morador['nome'], dados_morador['email'],
-                                  dados_morador['telefone'], 'morador', senha_hash)
-                usuario_id = db_manager.executar_comando(comando_usuario, params_usuario)
-                print(f"  - Morador '{dados_morador['nome']}' criado com sucesso (ID: {usuario_id}).")
-
-            moradores_ids[dados_morador['nome']] = usuario_id
-
-        except Exception as e:
-            print(f"  - Ocorreu um erro ao criar o morador '{dados_morador['nome']}': {e}")
-
-    # --- 2. CRIAR QUARTO ---
-    print("\n[Passo 2 de 3] Criando quarto de teste...")
-    quarto_id = None
     try:
-        admin_cpf = '00000000000'
-        query_admin = "SELECT id FROM usuario WHERE cpf = ? AND tipo_usuario = 'administrador'"
-        resultado_admin = db_manager.executar_query(query_admin, (admin_cpf,))
+        # --- 1. CRIAR USUÁRIOS (ADMIN E MORADORES) ---
+        print("\n[PASSO 1/5] Criando usuários...")
+        usuarios_para_criar = [
+            {'cpf': '00000000000', 'nome': 'Admin Padrão', 'email': 'admin@rep.com', 'telefone': '111111111',
+             'senha': 'admin123', 'tipo': 'administrador'},
+            {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '222222222',
+             'senha': 'senha123', 'tipo': 'morador'},
+            {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '333333333',
+             'senha': 'senha123', 'tipo': 'morador'},
+            {'cpf': '99988877766', 'nome': 'Carlos Pereira', 'email': 'carlos@email.com', 'telefone': '444444444',
+             'senha': 'senha123', 'tipo': 'morador'}
+        ]
 
-        if resultado_admin:
-            admin_id = resultado_admin[0]['id']
-            print(f"  - Administrador existente encontrado (ID: {admin_id}).")
-        else:
-            senha_admin = Validador.hash_senha('admin123')
-            comando_admin = "INSERT INTO usuario (cpf, nome, email, telefone, tipo_usuario, senhaCriptografada) VALUES (?, ?, ?, ?, ?, ?)"
-            params_admin = (admin_cpf, 'Admin Teste', 'admin@republica.com', '0000000000', 'administrador', senha_admin)
-            admin_id = db_manager.executar_comando(comando_admin, params_admin)
-            print(f"  - Administrador de teste criado (ID: {admin_id}).")
-
-        query_rep = "SELECT id FROM republica WHERE administrador_id = ?"
-        resultado_rep = db_manager.executar_query(query_rep, (admin_id,))
-        if resultado_rep:
-            republica_id = resultado_rep[0]['id']
-            print(f"  - República já existe (ID: {republica_id}).")
-        else:
-            comando_rep = "INSERT INTO republica (nome, administrador_id) VALUES (?, ?)"
-            republica_id = db_manager.executar_comando(comando_rep, ('Republica Teste', admin_id))
-            print(f"  - República criada (ID: {republica_id}).")
-
-        query_quarto = "SELECT id FROM quarto WHERE numero_quarto = ? AND republica_id = ?"
-        resultado = db_manager.executar_query(query_quarto, (100, republica_id))
-
-        if resultado:
-            quarto_id = resultado[0]['id']
-            print(f"  - Quarto 100 já existe (ID: {quarto_id}).")
-        else:
-            comando_quarto = "INSERT INTO quarto (numero_quarto, tamanho, republica_id) VALUES (?, ?, ?)"
-            params_quarto = (100, 12, republica_id)
-            quarto_id = db_manager.executar_comando(comando_quarto, params_quarto)
-            print(f"  - Quarto 100 criado com sucesso (ID: {quarto_id}).")
-    except Exception as e:
-        print(f"  - Ocorreu um erro ao criar o quarto 100: {e}")
-
-    # --- 3. CRIAR CONTRATO ---
-    print("\n[Passo 3 de 3] Associando morador ao quarto...")
-    if quarto_id and moradores_ids.get("João da Silva"):
-        morador_id = moradores_ids["João da Silva"]
-        try:
-            query_contrato = "SELECT id FROM contrato WHERE morador_id = ? AND status = 'ativo'"
-            resultado = db_manager.executar_query(query_contrato, (morador_id,))
-
-            if resultado:
-                print(f"  - Morador 'João da Silva' já possui um contrato ativo.")
+        usuarios_ids = {}
+        for dados in usuarios_para_criar:
+            if not db_manager.executar_query("SELECT id FROM usuario WHERE cpf = ?", (dados['cpf'],)):
+                senha_hash = Validador.hash_senha(dados['senha'])
+                comando = "INSERT INTO usuario (cpf, nome, email, telefone, senhaCriptografada, tipo_usuario) VALUES (?, ?, ?, ?, ?, ?)"
+                params = (dados['cpf'], dados['nome'], dados['email'], dados['telefone'], senha_hash, dados['tipo'])
+                user_id = db_manager.executar_comando(comando, params)
+                usuarios_ids[dados['nome']] = user_id
+                print(f"  - Usuário '{dados['nome']}' criado com sucesso (ID: {user_id}).")
             else:
-                comando_contrato = "INSERT INTO contrato (morador_id, quarto_id, data_inicio, valor_aluguel, status) VALUES (?, ?, ?, ?, 'ativo')"
-                params_contrato = (morador_id, quarto_id, date.today(), 550.00)
-                contrato_id = db_manager.executar_comando(comando_contrato, params_contrato)
-                print(
-                    f"  - Contrato criado com sucesso para 'João da Silva' no quarto 100 (ID do Contrato: {contrato_id}).")
-        except Exception as e:
-            print(f"  - Ocorreu um erro ao criar o contrato: {e}")
-    else:
+                user_id = db_manager.executar_query("SELECT id FROM usuario WHERE cpf = ?", (dados['cpf'],))[0]['id']
+                usuarios_ids[dados['nome']] = user_id
+                print(f"  - Usuário '{dados['nome']}' já existe (ID: {user_id}).")
+
+        # --- 2. CRIAR REPÚBLICA ---
+        print("\n[PASSO 2/5] Criando república...")
+        admin_id = usuarios_ids['Admin Padrão']
+        republica_id = None
+        if not db_manager.executar_query("SELECT id FROM republica WHERE administrador_id = ?", (admin_id,)):
+            republica_id = db_manager.executar_comando("INSERT INTO republica (nome, administrador_id) VALUES (?, ?)",
+                                                       ('República Prime', admin_id))
+            print(f"  - República criada com sucesso (ID: {republica_id}).")
+        else:
+            republica_id = \
+            db_manager.executar_query("SELECT id FROM republica WHERE administrador_id = ?", (admin_id,))[0]['id']
+
+        # --- 3. CRIAR QUARTOS ---
+        print("\n[PASSO 3/5] Criando quartos...")
+        quartos_ids = {}
+        for num in [101, 102, 201, 202]:
+            if not db_manager.executar_query("SELECT id FROM quarto WHERE numero_quarto = ? AND republica_id = ?",
+                                             (num, republica_id)):
+                quarto_id = db_manager.executar_comando(
+                    "INSERT INTO quarto (numero_quarto, tamanho, republica_id) VALUES (?, ?, ?)",
+                    (num, 12, republica_id))
+                quartos_ids[num] = quarto_id
+                print(f"  - Quarto {num} criado (ID: {quarto_id}).")
+            else:
+                quartos_ids[num] = \
+                db_manager.executar_query("SELECT id FROM quarto WHERE numero_quarto = ? AND republica_id = ?",
+                                          (num, republica_id))[0]['id']
+
+        # --- 4. CRIAR CONTRATOS ---
+        print("\n[PASSO 4/5] Associando moradores aos quartos...")
+        for morador_nome, quarto_num in [('João da Silva', 101), ('Maria Oliveira', 102)]:
+            morador_id = usuarios_ids[morador_nome]
+            quarto_id = quartos_ids[quarto_num]
+            if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND status = 'ativo'",
+                                             (morador_id,)):
+                db_manager.executar_comando(
+                    "INSERT INTO contrato (morador_id, quarto_id, data_inicio, valor_aluguel, status) VALUES (?, ?, ?, ?, 'ativo')",
+                    (morador_id, quarto_id, date.today(), 550.00))
+                print(f"  - Contrato criado para '{morador_nome}' no quarto {quarto_num}.")
+
+        # --- 5. CRIAR DÍVIDAS E PAGAMENTOS ---
+        print("\n[PASSO 5/5] Criando dívidas e pagamentos de exemplo...")
+        divida_id = db_manager.executar_comando(
+            "INSERT INTO divida (morador_id, valor, descricao, data_vencimento, status) VALUES (?, ?, ?, ?, ?)",
+            (usuarios_ids['João da Silva'], 150.00, 'Conta de Luz', date.today() + timedelta(days=10), 'pendente'))
+        print(f"  - Dívida 'Conta de Luz' criada para João da Silva.")
+        db_manager.executar_comando(
+            "INSERT INTO pagamento (divida_id, valor, data_pagamento, status) VALUES (?, ?, ?, ?)",
+            (divida_id, 150.00, date.today(), 'pendente'))
+        print(f"  - Solicitação de pagamento para 'Conta de Luz' criada.")
+
+        db_manager.executar_comando(
+            "INSERT INTO divida (morador_id, valor, descricao, data_vencimento, status) VALUES (?, ?, ?, ?, ?)",
+            (usuarios_ids['Maria Oliveira'], 75.50, 'Internet', date.today() - timedelta(days=15), 'pendente'))
+        print(f"  - Dívida 'Internet' (vencida) criada para Maria Oliveira.")
+
+    except sqlite3.OperationalError as e:
         print(
-            "  - Não foi possível criar o contrato pois o quarto 100 ou o morador 'João da Silva' não foram criados corretamente.")
+            f"\nERRO de Tabela: {e}.\nCertifique-se de que o banco de dados 'republica.db' e suas tabelas já foram criados executando o main.py primeiro.")
+    except Exception as e:
+        print(f"\nUm erro inesperado ocorreu: {e}")
 
     print("\nPopulação do banco de dados concluída!")
 

@@ -1,8 +1,246 @@
+from tkinter import ttk, messagebox
 from .abstract_controlador import AbstractControlador
+from src.views.tela_dividas import TelaDividas
+from src.views.tela_formulario_divida import TelaFormularioDivida
+from src.models.Divida import Divida
+from src.models.Morador import Morador
+from src.models.Pagamento import Pagamento
+from src.models.Historico import Historico
+from datetime import datetime
+
 
 class ControladorDivida(AbstractControlador):
     def __init__(self, controlador_sistema):
         super().__init__(controlador_sistema)
+        self.tela_dividas = None
+        self.moradores = []
 
-    def abre_tela(self):
-        pass
+    def abre_tela(self, parent_view=None):
+        self.moradores = Morador.buscar_todos()
+        self.tela_dividas = TelaDividas(parent_view.content_frame, self._controlador_sistema, self.moradores)
+        self._controlador_sistema.tela_atual = self.tela_dividas
+        self.tela_dividas.mostrar()
+
+    def carregar_dividas_na_view(self, container: ttk.Frame, tipo_usuario: str, ordenar_por: str,
+                                 incluir_quitadas: bool):
+        dividas = Divida.buscar_com_filtros(ordenar_por, incluir_quitadas)
+
+        for widget in container.winfo_children(): widget.destroy()
+
+        if not dividas:
+            ttk.Label(container, text="Nenhuma dívida encontrada para os filtros selecionados.", font=("Arial", 12),
+                      style="Dividas.TLabel").pack(expand=True)
+            return
+
+        headers = ["Morador", "Descrição", "Valor", "Vencimento", "Status"]
+        if tipo_usuario == 'administrador': headers.append("Ações")
+
+        for i, header in enumerate(headers):
+            container.columnconfigure(i, weight=(2 if header == "Descrição" else 1))
+            ttk.Label(container, text=header, font=("Arial", 10, "bold"), style="Dividas.TLabel").grid(row=0, column=i,
+                                                                                                       sticky="w",
+                                                                                                       padx=5)
+
+        for i, divida in enumerate(dividas):
+            row = i + 1
+
+            status_texto = divida.status.capitalize()
+            status_style = f"Status.{status_texto}.TLabel"
+            vencimento_style = "Dividas.TLabel"
+
+            data_venc_formatada = ""
+            try:
+                data_obj = datetime.strptime(divida.data_vencimento, '%Y-%m-%d')
+                data_venc_formatada = data_obj.strftime('%d/%m/%Y')
+            except (ValueError, TypeError):
+                data_venc_formatada = divida.data_vencimento
+
+            if divida.is_vencida:
+                status_texto = "Vencida"
+                status_style = "Status.Vencida.TLabel"
+                vencimento_style = "Status.Vencida.TLabel"
+
+            ttk.Label(container, text=divida.nome_morador, style="Dividas.TLabel").grid(row=row, column=0, sticky="w", padx=5, pady=3)
+
+            ttk.Label(container, text=divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky="w", padx=5, pady=3)
+            ttk.Label(container, text=f"R$ {divida.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky="w", padx=5, pady=3)
+            ttk.Label(container, text=data_venc_formatada, style=vencimento_style).grid(row=row, column=3, sticky="w", padx=5, pady=3)
+            ttk.Label(container, text=status_texto, style=status_style).grid(row=row, column=4, sticky="w", padx=5, pady=3)
+
+            if tipo_usuario == 'administrador':
+                action_frame = ttk.Frame(container, style="Dividas.TFrame")
+                action_frame.grid(row=row, column=5, sticky="w", padx=5)
+
+                btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
+                                        command=lambda d=divida: self.abrir_tela_formulario_divida(divida_existente=d))
+                btn_editar.pack(side="left")
+
+                btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
+                                         command=lambda d_id=divida.id: self.excluir_divida(d_id))
+                btn_excluir.pack(side="left", padx=5)
+
+    def abrir_tela_formulario_divida(self, divida_existente=None):
+        root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
+        TelaFormularioDivida(root_window, self, self.moradores, divida_existente)
+
+    def salvar_divida(self, dados: dict):
+        try:
+            divida_antiga = None
+            if dados.get("id"):
+                divida_antiga = Divida.buscar_por_id(dados["id"])
+
+            divida_nova = Divida(**dados)
+            divida_nova.salvar()
+
+            nome_morador_novo = Morador.buscar_por_id(divida_nova.morador_id).nome
+
+            if divida_antiga:
+                mudancas = []
+                if divida_antiga.descricao != divida_nova.descricao: mudancas.append(
+                    f"Descrição -> '{divida_nova.descricao}'")
+                if divida_antiga.valor != divida_nova.valor: mudancas.append(f"Valor -> R$ {divida_nova.valor:.2f}")
+                if divida_antiga.data_vencimento != divida_nova.data_vencimento: mudancas.append(
+                    f"Vencimento -> {divida_nova.data_vencimento}")
+
+                if mudancas:
+                    Historico.registrar_evento(
+                        evento="Dívida Editada",
+                        morador_nome=nome_morador_novo,
+                        divida_descricao=divida_antiga.descricao,
+                        valor=divida_nova.valor,
+                        detalhes=", ".join(mudancas)
+                    )
+            else:
+                Historico.registrar_evento(
+                    evento="Dívida Criada",
+                    morador_nome=nome_morador_novo,
+                    divida_descricao=divida_nova.descricao,
+                    valor=divida_nova.valor
+                )
+
+            self.tela_dividas.atualizar_todas_abas()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível salvar a dívida: {e}")
+            return False
+
+    def excluir_divida(self, divida_id: int):
+        if messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esta dívida?", icon='warning'):
+            try:
+                Divida.deletar(divida_id)
+                self.tela_dividas.atualizar_lista()
+            except Exception as e:
+                messagebox.showerror("Erro", f"Não foi possível excluir a dívida: {e}")
+
+    def carregar_pagamentos_pendentes(self, container: ttk.Frame):
+        pagamentos = Pagamento.buscar_pendentes()
+        for widget in container.winfo_children(): widget.destroy()
+        if not pagamentos:
+            ttk.Label(container, text="Nenhuma solicitação de pagamento pendente.", style="Dividas.TLabel").pack(
+                expand=True)
+            return
+
+        headers = ["Morador", "Dívida", "Valor Pago", "Data", "Ações"]
+        for i, h in enumerate(headers):
+            container.columnconfigure(i, weight=1)
+            ttk.Label(container, text=h, style="Dividas.TLabel", font=('Arial', 10, 'bold')).grid(row=0, column=i, sticky='w', padx=5)
+
+        for i, pag in enumerate(pagamentos):
+            row = i + 1
+            data_pag_formatada = ""
+            try:
+                data_obj = datetime.strptime(pag.data_pagamento, '%Y-%m-%d')
+                data_pag_formatada = data_obj.strftime('%d/%m/%Y')
+            except (ValueError, TypeError):
+                data_pag_formatada = pag.data_pagamento
+
+            ttk.Label(container, text=pag.nome_morador, style="Dividas.TLabel").grid(row=row, column=0, sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=pag.descricao_divida, style="Dividas.TLabel").grid(row=row, column=1, sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=f"R$ {pag.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=data_pag_formatada, style="Dividas.TLabel").grid(row=row, column=3, sticky='w', padx=5, pady=4)
+
+            action_frame = ttk.Frame(container, style="Dividas.TFrame")
+            action_frame.grid(row=row, column=4, sticky='w')
+            btn_aceitar = ttk.Button(action_frame, text="Aceitar", style="Salvar.TButton",
+                                     command=lambda p=pag: self.aceitar_pagamento(p))
+            btn_aceitar.pack(side='left')
+            btn_recusar = ttk.Button(action_frame, text="Recusar", style="Excluir.TButton",
+                                     command=lambda p=pag: self.recusar_pagamento(p))
+            btn_recusar.pack(side='left', padx=5)
+
+    def aceitar_pagamento(self, pagamento: Pagamento):
+        try:
+            pagamento.atualizar_status('confirmado')
+            divida = Divida.buscar_por_id(pagamento.divida_id)
+            if divida:
+                divida.atualizar_status('quitada')
+                Historico.registrar_evento(
+                    evento="Pagamento Confirmado",
+                    morador_nome=divida.nome_morador,
+                    divida_descricao=divida.descricao,
+                    valor=pagamento.valor
+                )
+
+            messagebox.showinfo("Sucesso", "Pagamento confirmado e dívida quitada.")
+            self.tela_dividas.atualizar_todas_abas()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível aceitar o pagamento: {e}")
+
+    def recusar_pagamento(self, pagamento: Pagamento):
+        try:
+            pagamento.atualizar_status('cancelado')
+            Historico.registrar_evento(
+                evento="Pagamento Recusado",
+                morador_nome=pagamento.nome_morador,
+                divida_descricao=pagamento.descricao_divida,
+                valor=pagamento.valor
+            )
+            messagebox.showinfo("Sucesso", "Pagamento recusado.")
+            self.tela_dividas.atualizar_todas_abas()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível recusar o pagamento: {e}")
+
+    def carregar_historico(self, container: ttk.Frame):
+        for widget in container.winfo_children(): widget.destroy()
+
+        eventos_historico = Historico.buscar_todos()
+
+        if not eventos_historico:
+            ttk.Label(container, text="Nenhum histórico para exibir.", style="Dividas.TLabel").pack(expand=True)
+            return
+
+        headers = ["Data/Hora", "Evento", "Morador", "Descrição da Dívida", "Valor", "Detalhes"]
+        weights = [2, 2, 2, 3, 1, 4]
+
+        for i, h in enumerate(headers):
+            container.columnconfigure(i, weight=weights[i])
+            ttk.Label(container, text=h, style="Dividas.TLabel", font=('Arial', 10, 'bold')).grid(row=0, column=i,
+                                                                                                  sticky='w', padx=5)
+
+        for i, evento in enumerate(eventos_historico):
+            row = i + 1
+
+            timestamp_formatado = ""
+            try:
+                dt_obj = datetime.fromisoformat(evento.timestamp)
+                timestamp_formatado = dt_obj.strftime('%d/%m/%Y %H:%M')
+            except (ValueError, TypeError):
+                timestamp_formatado = evento.timestamp
+
+            valor_str = f"R$ {evento.valor:.2f}" if evento.valor is not None else ""
+
+            ttk.Label(container, text=timestamp_formatado, style="Dividas.TLabel").grid(row=row, column=0, sticky='w', padx=5, pady=3)
+            ttk.Label(container, text=evento.evento, style="Dividas.TLabel").grid(row=row, column=1, sticky='w', padx=5, pady=3)
+            ttk.Label(container, text=evento.morador_nome or "", style="Dividas.TLabel").grid(row=row, column=2, sticky='w', padx=5, pady=3)
+            ttk.Label(container, text=evento.divida_descricao or "", style="Dividas.TLabel").grid(row=row, column=3, sticky='w', padx=5, pady=3)
+            ttk.Label(container, text=valor_str, style="Dividas.TLabel").grid(row=row, column=4, sticky='w', padx=5,
+                                                                              pady=3)
+            ttk.Label(container, text=evento.detalhes or "", style="Dividas.TLabel", wraplength=400,
+                      justify='left').grid(row=row, column=5, sticky='w', padx=5, pady=3)
+
+    def recarregar_abas_secundarias(self):
+        if self.tela_dividas:
+            if self.tela_dividas.frame_avaliar_pagamentos:
+                self.carregar_pagamentos_pendentes(self.tela_dividas.frame_avaliar_pagamentos)
+            if self.tela_dividas.frame_historico:
+                self.carregar_historico(self.tela_dividas.frame_historico)
