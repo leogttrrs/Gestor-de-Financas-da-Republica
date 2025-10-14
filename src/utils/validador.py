@@ -127,11 +127,11 @@ class Validador:
         return email
 
     @staticmethod
-    def validar_dados_usuario(cpf, nome, email, telefone, genero):
+    def validar_dados_usuario(cpf, nome, email, telefone):
         if not Validador.VALIDAR_DADOS_USUARIO:
             return True, "Dados válidos"
 
-        if not cpf or not nome or not email or not telefone or not genero:
+        if not cpf or not nome or not email or not telefone:
             return False, "Todos os campos são obrigatórios"
         
         cpf_validado = Validador.validar_cpf(cpf)
@@ -149,9 +149,6 @@ class Validador:
         telefone_validado = Validador.validar_telefone(telefone)
         if "inválido" in str(telefone_validado):
             return False, "Telefone inválido"
-        
-        if genero.lower() not in ['masculino', 'feminino']:
-            return False, "Gênero deve ser 'masculino' ou 'feminino'"
         
         return True, "Dados válidos"
 
