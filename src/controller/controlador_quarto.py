@@ -1,3 +1,4 @@
+import sqlite3
 from .abstract_controlador import AbstractControlador
 from src.views.tela_quarto import TelaQuarto
 from src.views.tela_formulario_quarto import TelaFormularioQuarto
@@ -43,8 +44,15 @@ class ControladorQuarto(AbstractControlador):
             if self.tela_gerenciar:
                 self.tela_gerenciar.atualizar_lista()
             return True, "Salvo com sucesso"
+
+        except sqlite3.IntegrityError as e:
+            if 'UNIQUE constraint failed' in str(e):
+                num_quarto = dados.get('numero_quarto', '')
+                return False, f"Já existe um quarto com o número {num_quarto}."
+            else:
+                return False, f"Erro de integridade no banco de dados: {e}"
         except Exception as e:
-            return False, str(e)
+            return False, f"Um erro inesperado ocorreu: {e}"
 
     def excluir_quarto(self, quarto_id: int):
         quarto = Quarto.buscar_por_id(quarto_id)
