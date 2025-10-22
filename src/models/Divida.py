@@ -6,14 +6,13 @@ from datetime import date, datetime
 
 class Divida:
     def __init__(self, morador_id: int, valor: float, descricao: str, data_vencimento: str, status: str,
-                 data_criacao: str = None, id: int = None, **kwargs):
+                 id: int = None, **kwargs):
         self.id = id
         self.morador_id = morador_id
         self.valor = valor
         self.descricao = descricao
         self.data_vencimento = data_vencimento
         self.status = status
-        self.data_criacao = data_criacao
         self._nome_morador = None
 
     @property

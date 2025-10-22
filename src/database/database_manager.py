@@ -96,10 +96,7 @@ class DatabaseManager:
                     descricao TEXT,
                     data_vencimento DATE NOT NULL,
                     status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'quitada')),
-                    recorrencia_id INTEGER,
-                    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE,
-                    FOREIGN KEY (recorrencia_id) REFERENCES recorrencia(id) ON DELETE SET NULL
+                    FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)
 
@@ -138,7 +135,6 @@ class DatabaseManager:
                     valor DECIMAL(10,2) NOT NULL,
                     data_pagamento DATE NOT NULL,
                     status TEXT NOT NULL DEFAULT 'confirmado' CHECK (status IN ('pendente', 'confirmado', 'cancelado')),
-                    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (divida_id) REFERENCES divida(id) ON DELETE CASCADE
                 )
             """)
