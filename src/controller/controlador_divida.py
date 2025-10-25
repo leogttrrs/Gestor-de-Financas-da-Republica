@@ -6,7 +6,7 @@ from src.models.Divida import Divida
 from src.models.Morador import Morador
 from src.models.Pagamento import Pagamento
 from src.models.Historico import Historico
-from datetime import datetime
+from datetime import datetime, date
 
 
 class ControladorDivida(AbstractControlador):
@@ -48,7 +48,6 @@ class ControladorDivida(AbstractControlador):
             status_style = f"Status.{status_texto}.TLabel"
             vencimento_style = "Dividas.TLabel"
 
-            data_venc_formatada = ""
             try:
                 data_obj = datetime.strptime(divida.data_vencimento, '%Y-%m-%d')
                 data_venc_formatada = data_obj.strftime('%d/%m/%Y')
@@ -85,22 +84,60 @@ class ControladorDivida(AbstractControlador):
 
     def salvar_divida(self, dados: dict):
         try:
+            valor = dados.get("valor")
+            if valor is None or valor <= 0:
+                messagebox.showerror("Erro de Validação", "O valor da dívida deve ser maior que zero.")
+                return False
+
+            data_venc_str = dados.get("data_vencimento")
+            if data_venc_str:
+                try:
+                    data_venc = datetime.strptime(data_venc_str, '%Y-%m-%d').date()
+                    if data_venc < date.today():
+                        messagebox.showerror("Erro de Validação",
+                                             "A data de vencimento não pode ser anterior à data atual.")
+                        return False
+                except ValueError:
+                    messagebox.showerror("Erro de Validação", "Formato de data de vencimento inválido.")
+                    return False
+            else:
+                messagebox.showerror("Erro de Validação", "A data de vencimento é obrigatória.")
+                return False
+
             divida_antiga = None
             if dados.get("id"):
                 divida_antiga = Divida.buscar_por_id(dados["id"])
 
-            divida_nova = Divida(**dados)
+
+            morador_id_selecionado = dados['morador_id']
+            morador_obj = Morador.buscar_por_id(morador_id_selecionado)
+            if not morador_obj:
+                return False, f"Morador com ID {morador_id_selecionado} não encontrado."
+
+            divida_nova = Divida(
+                id=dados.get("id"),
+                morador=morador_obj,
+                valor=dados["valor"],
+                descricao=dados["descricao"],
+                data_vencimento=dados["data_vencimento"],
+                status=dados.get("status", 'pendente')
+            )
             divida_nova.salvar()
 
-            nome_morador_novo = Morador.buscar_por_id(divida_nova.morador_id).nome
+
+            nome_morador_novo = divida_nova.morador.nome if divida_nova.morador else "Desconhecido"
 
             if divida_antiga:
                 mudancas = []
-                if divida_antiga.descricao != divida_nova.descricao: mudancas.append(
-                    f"Descrição -> '{divida_nova.descricao}'")
-                if divida_antiga.valor != divida_nova.valor: mudancas.append(f"Valor -> R$ {divida_nova.valor:.2f}")
-                if divida_antiga.data_vencimento != divida_nova.data_vencimento: mudancas.append(
-                    f"Vencimento -> {divida_nova.data_vencimento}")
+
+                if divida_antiga.morador.id != divida_nova.morador.id:
+                    mudancas.append(f"Morador alterado para '{nome_morador_novo}'")
+                if divida_antiga.descricao != divida_nova.descricao:
+                    mudancas.append(f"Descrição -> '{divida_nova.descricao}'")
+                if divida_antiga.valor != divida_nova.valor:
+                    mudancas.append(f"Valor -> R$ {divida_nova.valor:.2f}")
+                if divida_antiga.data_vencimento != divida_nova.data_vencimento:
+                    mudancas.append(f"Vencimento -> {divida_nova.data_vencimento}")
 
                 if mudancas:
                     Historico.registrar_evento(
@@ -111,17 +148,19 @@ class ControladorDivida(AbstractControlador):
                         detalhes=", ".join(mudancas)
                     )
             else:
-                Historico.registrar_evento(
+                 Historico.registrar_evento(
                     evento="Dívida Criada",
                     morador_nome=nome_morador_novo,
                     divida_descricao=divida_nova.descricao,
                     valor=divida_nova.valor
                 )
 
-            self.tela_dividas.atualizar_todas_abas()
+            if self.tela_dividas:
+                 self.tela_dividas.atualizar_todas_abas()
             return True
+
         except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível salvar a dívida: {e}")
+            messagebox.showerror("Erro ao Salvar Dívida", f"Não foi possível salvar a dívida: {e}")
             return False
 
     def excluir_divida(self, divida_id: int):
@@ -147,15 +186,14 @@ class ControladorDivida(AbstractControlador):
 
         for i, pag in enumerate(pagamentos):
             row = i + 1
-            data_pag_formatada = ""
             try:
                 data_obj = datetime.strptime(pag.data_pagamento, '%Y-%m-%d')
                 data_pag_formatada = data_obj.strftime('%d/%m/%Y')
             except (ValueError, TypeError):
                 data_pag_formatada = pag.data_pagamento
 
-            ttk.Label(container, text=pag.nome_morador, style="Dividas.TLabel").grid(row=row, column=0, sticky='w', padx=5, pady=4)
-            ttk.Label(container, text=pag.descricao_divida, style="Dividas.TLabel").grid(row=row, column=1, sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=pag.divida.morador.nome, style="Dividas.TLabel").grid(row=row, column=0, sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=pag.divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky='w', padx=5, pady=4)
             ttk.Label(container, text=f"R$ {pag.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky='w', padx=5, pady=4)
             ttk.Label(container, text=data_pag_formatada, style="Dividas.TLabel").grid(row=row, column=3, sticky='w', padx=5, pady=4)
 
@@ -171,13 +209,12 @@ class ControladorDivida(AbstractControlador):
     def aceitar_pagamento(self, pagamento: Pagamento):
         try:
             pagamento.atualizar_status('confirmado')
-            divida = Divida.buscar_por_id(pagamento.divida_id)
-            if divida:
-                divida.atualizar_status('quitada')
+            if pagamento.divida:
+                pagamento.divida.atualizar_status('quitada')
                 Historico.registrar_evento(
                     evento="Pagamento Confirmado",
-                    morador_nome=divida.nome_morador,
-                    divida_descricao=divida.descricao,
+                    morador_nome=pagamento.divida.morador.nome,
+                    divida_descricao=pagamento.divida.descricao,
                     valor=pagamento.valor
                 )
 
@@ -191,8 +228,8 @@ class ControladorDivida(AbstractControlador):
             pagamento.atualizar_status('cancelado')
             Historico.registrar_evento(
                 evento="Pagamento Recusado",
-                morador_nome=pagamento.nome_morador,
-                divida_descricao=pagamento.descricao_divida,
+                morador_nome=pagamento.divida.morador.nome,
+                divida_descricao=pagamento.divida.descricao,
                 valor=pagamento.valor
             )
             messagebox.showinfo("Sucesso", "Pagamento recusado.")
@@ -220,7 +257,6 @@ class ControladorDivida(AbstractControlador):
         for i, evento in enumerate(eventos_historico):
             row = i + 1
 
-            timestamp_formatado = ""
             try:
                 dt_obj = datetime.fromisoformat(evento.timestamp)
                 timestamp_formatado = dt_obj.strftime('%d/%m/%Y %H:%M')
