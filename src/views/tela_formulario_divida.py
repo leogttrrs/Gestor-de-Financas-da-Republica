@@ -39,7 +39,7 @@ class TelaFormularioDivida(tk.Toplevel):
                 self.vencimento_var.set(divida_existente.data_vencimento)
 
             for nome, morador_id in self.moradores_map.items():
-                if morador_id == divida_existente.morador_id:
+                if morador_id == divida_existente.morador.id:
                     self.morador_var.set(nome)
                     break
 
