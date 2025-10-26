@@ -166,7 +166,6 @@ class ControladorDivida(AbstractControlador):
             return False
         
     def salvar_divida_recorrencia(self, dados: dict):
-        print(dados)
         hoje = datetime.today()
         dia_atual = int(hoje.day)
         mes_atual = int(hoje.month)
