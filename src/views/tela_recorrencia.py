@@ -90,13 +90,13 @@ class TelaRecorrencia(tk.Toplevel):
     def _salvar(self):
         try:
             nome_morador = self.morador_var.get()
-            data_venc_str = self.vencimento_var.get()
+            data_venc_str = int(self.vencimento_var.get())
             valor_str = self.valor_var.get()
 
             if not all([self.desc_var.get(), valor_str, nome_morador, data_venc_str]):
                 messagebox.showerror("Erro", "Todos os campos são obrigatórios.", parent=self)
                 return
-            data_venc_db = datetime.strptime(data_venc_str, '%d/%m/%Y').strftime('%Y-%m-%d')
+            data_venc_db = data_venc_str
             valor_float = float(valor_str.replace(',', '.'))
             recorrencia_int = int(self.recorrencia_var.get()) 
 

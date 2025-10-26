@@ -132,13 +132,12 @@ class ControladorDivida(AbstractControlador):
         
     def salvar_divida_recorrencia(self, dados: dict):
         hoje = datetime.today()
-        dia_atual = hoje.day
-        mes_atual = hoje.month
-        ano_atual = hoje.year
+        dia_atual = int(hoje.day)
+        mes_atual = int(hoje.month)
+        ano_atual = int(hoje.year)
         data_base = dados["data_vencimento"]
-        dia_int = int(data_base.split('/')[2])
-        mes_atual = int(data_base.split('/')[1])
-        ano_atual = int(data_base.split('/')[0])
+        dia_int = int(data_base)
+        data_base = datetime(ano_atual, mes_atual, dia_int)
         recorrencias = dados["recorrencia"]
         
         
