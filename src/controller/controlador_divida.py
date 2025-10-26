@@ -1,12 +1,15 @@
 from tkinter import ttk, messagebox
+from views import tela_ocorrencia
 from .abstract_controlador import AbstractControlador
 from src.views.tela_dividas import TelaDividas
 from src.views.tela_formulario_divida import TelaFormularioDivida
+from src.views.tela_recorrencia import TelaRecorrencia
 from src.models.Divida import Divida
 from src.models.Morador import Morador
 from src.models.Pagamento import Pagamento
 from src.models.Historico import Historico
 from datetime import datetime
+from datetime import date
 
 
 class ControladorDivida(AbstractControlador):
@@ -74,10 +77,13 @@ class ControladorDivida(AbstractControlador):
                 btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
                                         command=lambda d=divida: self.abrir_tela_formulario_divida(divida_existente=d))
                 btn_editar.pack(side="left")
-
+                btnm_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
+                                        command=lambda d=divida: self.abrir_tela_recorrencia(divida_existente=d))
+                btnm_editar.pack(side="left")
                 btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
                                          command=lambda d_id=divida.id: self.excluir_divida(d_id))
                 btn_excluir.pack(side="left", padx=5)
+                
 
     def abrir_tela_formulario_divida(self, divida_existente=None):
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
@@ -123,6 +129,76 @@ class ControladorDivida(AbstractControlador):
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível salvar a dívida: {e}")
             return False
+        
+    def salvar_divida_recorrencia(self, dados: dict):
+        hoje = datetime.today()
+        dia_atual = hoje.day
+        mes_atual = hoje.month
+        ano_atual = hoje.year
+        data_base = dados["data_vencimento"]
+        dia_int = int(data_base.split('/')[2])
+        mes_atual = int(data_base.split('/')[1])
+        ano_atual = int(data_base.split('/')[0])
+        recorrencias = dados["recorrencia"]
+        
+        
+        try:
+            if recorrencias < 1:
+                messagebox.showerror("Erro", "O número de recorrências deve ser superior à 0.")
+            elif dia_int < 1 or dia_int > 28:
+                messagebox.showerror("Erro", "A data de vencimento deve estar entre 1 e 28.")
+                return False
+            elif dados["valor"] <= 0:
+                messagebox.showerror("Erro", "O valor da dívida deve ser maior que zero.")
+                return False
+            elif dia_atual > dia_int:
+                resposta = messagebox.askyesno(
+                "Confirmação",
+                "A data de vencimento é anterior ao dia atual.\n"
+                "A primeira dívida será criada para o próximo mês.\n"
+                "Deseja continuar?"
+            )
+                if resposta:  
+                    novo_mes = mes_atual + 1
+                    novo_ano = ano_atual
+                    if novo_mes > 12:
+                        novo_mes = 1
+                        novo_ano += 1
+                        data_base = datetime(novo_ano, novo_mes, dia_int)
+                    else:
+                        data_base = datetime(ano_atual, novo_mes, dia_int)
+                else:
+                    return False
+            for i in range(recorrencias):
+                novo_mes = (data_base.month + i - 1) % 12 + 1
+                novo_ano = data_base.year + ((data_base.month + i - 1) // 12)
+                nova_data = datetime(novo_ano, novo_mes, data_base.day)
+                nova_divida = Divida(
+                    morador_id=dados["morador_id"],
+                    descricao=f"{dados['descricao']} (Parcela {i + 1}/{recorrencias})",
+                    valor=dados["valor"],
+                    data_vencimento=nova_data.strftime('%d/%m/%Y'),
+                    status="pendente"
+                )
+                nova_divida.salvar()
+
+                nome_morador = Morador.buscar_por_id(nova_divida.morador_id).nome
+                Historico.registrar_evento(
+                    evento="Dívida Recorrente Criada",
+                    morador_nome=nome_morador,
+                    divida_descricao=nova_divida.descricao,
+                    valor=nova_divida.valor
+                )
+
+            self.tela_dividas.atualizar_todas_abas()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível salvar as dívidas recorrentes: {e}")
+            return False
+        
+    def abrir_tela_recorrencia(self, divida_existente=None):
+        root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
+        TelaRecorrencia(root_window, self, self.moradores, divida_existente)
 
     def excluir_divida(self, divida_id: int):
         if messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esta dívida?", icon='warning'):

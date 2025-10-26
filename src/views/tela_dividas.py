@@ -80,6 +80,10 @@ class TelaDividas(ComponenteBase):
         btn_adicionar = ttk.Button(controles_frame, text="+ Adicionar Nova Dívida",
                                    command=self.controlador_sistema.controlador_divida.abrir_tela_formulario_divida)
         btn_adicionar.pack(side="right")
+        
+        btnm_adicionar = ttk.Button(controles_frame, text="+ Adicionar Nova Recorrência",
+                                   command=self.controlador_sistema.controlador_divida.abrir_tela_recorrencia)
+        btnm_adicionar.pack(side="right")
 
         self.container_lista = ttk.Frame(self.frame_lista_dividas, style="Dividas.TFrame")
         self.container_lista.pack(fill="both", expand=True)
@@ -89,6 +93,11 @@ class TelaDividas(ComponenteBase):
     def _popular_aba_nova_divida(self, container):
         btn_adicionar = ttk.Button(container, text="+ Adicionar Nova Dívida",
                                    command=self.controlador_sistema.controlador_divida.abrir_tela_formulario_divida)
+        btn_adicionar.pack(expand=True)
+
+    def _popular_aba_nova_divida(self, container):
+        btn_adicionar = ttk.Button(container, text="+ Adicionar Nova Recorrência",
+                                   command=self.controlador_sistema.controlador_divida.abrir_tela_recorrencia)
         btn_adicionar.pack(expand=True)
 
     def atualizar_todas_abas(self):
