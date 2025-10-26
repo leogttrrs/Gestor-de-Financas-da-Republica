@@ -56,6 +56,10 @@ class ControladorSistema:
     @property
     def controlador_ocorrencia(self):
         return self.__controlador_ocorrencia
+    
+    @property
+    def controlador_recorrencia(self) -> ControladorRecorrencia:
+        return self.__controlador_controlador_recorrencia
 
     @property
     def tela_atual(self):

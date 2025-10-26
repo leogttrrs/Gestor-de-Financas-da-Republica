@@ -14,8 +14,8 @@ def popular_banco():
         # --- 1. CRIAR USUÁRIOS (ADMIN E MORADORES) ---
         print("\n[PASSO 1/5] Criando usuários...")
         usuarios_para_criar = [
-            {'cpf': '00000000000', 'nome': 'Admin Padrão', 'email': 'admin@rep.com', 'telefone': '111111111',
-             'senha': 'admin123', 'tipo': 'administrador'},
+            {'cpf': '1', 'nome': 'Admin Padrão', 'email': 'admin@rep.com', 'telefone': '111111111',
+             'senha': '1', 'tipo': 'administrador'},
             {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '222222222',
              'senha': 'senha123', 'tipo': 'morador'},
             {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '333333333',

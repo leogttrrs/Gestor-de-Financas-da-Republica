@@ -59,6 +59,8 @@ class TelaComMenuLateral(ComponenteBase):
                 self.controlador_sistema.controlador_quarto.abre_tela(self)
             case "dividas":
                 self.controlador_sistema.controlador_divida.abre_tela(self)
+            case "recorrencias":
+                self.controlador_sistema.controlador_recorrencia.abre_tela(self)
             case _:
                 self._mostrar_em_desenvolvimento(secao)
     
