@@ -6,3 +6,5 @@ class ControladorMorador(AbstractControlador):
     
     def abre_tela(self):
         pass
+
+

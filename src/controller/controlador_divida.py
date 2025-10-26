@@ -1,5 +1,4 @@
 from tkinter import ttk, messagebox
-from views import tela_ocorrencia
 from .abstract_controlador import AbstractControlador
 from src.views.tela_dividas import TelaDividas
 from src.views.tela_formulario_divida import TelaFormularioDivida
@@ -8,8 +7,6 @@ from src.models.Divida import Divida
 from src.models.Morador import Morador
 from src.models.Pagamento import Pagamento
 from src.models.Historico import Historico
-from datetime import datetime
-from datetime import date
 from datetime import datetime, date
 
 
@@ -169,6 +166,7 @@ class ControladorDivida(AbstractControlador):
             return False
         
     def salvar_divida_recorrencia(self, dados: dict):
+        print(dados)
         hoje = datetime.today()
         dia_atual = int(hoje.day)
         mes_atual = int(hoje.month)
@@ -211,7 +209,7 @@ class ControladorDivida(AbstractControlador):
                 novo_ano = data_base.year + ((data_base.month + i - 1) // 12)
                 nova_data = datetime(novo_ano, novo_mes, data_base.day)
                 nova_divida = Divida(
-                    morador_id=dados["morador_id"],
+                    morador=dados["morador"],
                     descricao=f"{dados['descricao']} (Parcela {i + 1}/{recorrencias})",
                     valor=dados["valor"],
                     data_vencimento=nova_data.strftime('%d/%m/%Y'),
@@ -219,7 +217,7 @@ class ControladorDivida(AbstractControlador):
                 )
                 nova_divida.salvar()
 
-                nome_morador = Morador.buscar_por_id(nova_divida.morador_id).nome
+                nome_morador = Morador.buscar_por_id(nova_divida.morador.id).nome
                 Historico.registrar_evento(
                     evento="Dívida Recorrente Criada",
                     morador_nome=nome_morador,

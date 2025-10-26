@@ -81,7 +81,7 @@ class TelaRecorrencia(tk.Toplevel):
         botoes_frame = ttk.Frame(frame)
         botoes_frame.pack(fill="x", side="bottom")
 
-        btn_salvar = ttk.Button(botoes_frame, text="Salvar Dívida", style="Salvar.TButton", command=self._salvar)
+        btn_salvar = ttk.Button(botoes_frame, text="Salvar Dívidas", style="Salvar.TButton", command=self._salvar)
         btn_salvar.pack(side="right")
 
         btn_cancelar = ttk.Button(botoes_frame, text="Cancelar", command=self.destroy)
@@ -98,13 +98,17 @@ class TelaRecorrencia(tk.Toplevel):
                 return
             data_venc_db = data_venc_str
             valor_float = float(valor_str.replace(',', '.'))
-            recorrencia_int = int(self.recorrencia_var.get()) 
+            recorrencia_int = int(self.recorrencia_var.get())
+
+            morador_id = self.moradores_map[nome_morador]
+
+            morador = Morador.buscar_por_id(morador_id)
 
             dados = {
                 "id": self.divida_existente.id if self.divida_existente else None,
                 "descricao": self.desc_var.get(),
                 "valor": valor_float,
-                "morador_id": self.moradores_map[nome_morador],
+                "morador": morador,
                 "data_vencimento": data_venc_db,
                 "recorrencia": recorrencia_int,
                 "status": 'pendente'
