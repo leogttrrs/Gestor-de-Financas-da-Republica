@@ -77,9 +77,7 @@ class ControladorDivida(AbstractControlador):
                 btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
                                         command=lambda d=divida: self.abrir_tela_formulario_divida(divida_existente=d))
                 btn_editar.pack(side="left")
-                btnm_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
-                                        command=lambda d=divida: self.abrir_tela_recorrencia(divida_existente=d))
-                btnm_editar.pack(side="left")
+                
                 btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
                                          command=lambda d_id=divida.id: self.excluir_divida(d_id))
                 btn_excluir.pack(side="left", padx=5)
