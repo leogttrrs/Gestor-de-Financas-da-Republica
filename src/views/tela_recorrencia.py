@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
 from src.models.Divida import Divida
 from src.models.Morador import Morador
 
@@ -12,7 +11,7 @@ class TelaRecorrencia(tk.Toplevel):
         self.divida_existente = divida_existente
         self.moradores = moradores
         self.moradores_map = {m.nome: m.id for m in moradores}
-        self.title("Adicionar Nova Dívida")
+        self.title("Adicionar Nova Recorrência")
         self.geometry("400x400")
         self.transient(parent)
         self.grab_set()
