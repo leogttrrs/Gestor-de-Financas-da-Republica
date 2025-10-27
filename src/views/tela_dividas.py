@@ -77,13 +77,13 @@ class TelaDividas(ComponenteBase):
                                          command=self.atualizar_lista)
         check_quitadas.pack(side="left", padx=20)
 
-        btn_adicionar = ttk.Button(controles_frame, text="+ Adicionar Nova Dívida",
+        btn_adicionar_divida = ttk.Button(controles_frame, text="+ Adicionar Nova Dívida",
                                    command=self.controlador_sistema.controlador_divida.abrir_tela_formulario_divida)
-        btn_adicionar.pack(side="right")
+        btn_adicionar_divida.pack(side="right")
         
-        btnm_adicionar = ttk.Button(controles_frame, text="+ Adicionar Nova Recorrência",
+        btn_adicionar_recorrencia = ttk.Button(controles_frame, text="+ Adicionar Nova Recorrência",
                                    command=self.controlador_sistema.controlador_divida.abrir_tela_recorrencia)
-        btnm_adicionar.pack(side="right")
+        btn_adicionar_recorrencia.pack(side="right")
 
         self.container_lista = ttk.Frame(self.frame_lista_dividas, style="Dividas.TFrame")
         self.container_lista.pack(fill="both", expand=True)
