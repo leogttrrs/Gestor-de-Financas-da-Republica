@@ -170,22 +170,22 @@ class ControladorDivida(AbstractControlador):
         dia_atual = int(hoje.day)
         mes_atual = int(hoje.month)
         ano_atual = int(hoje.year)
-        data_base = dados["data_vencimento"]
-        dia_int = int(data_base)
-        data_base = datetime(ano_atual, mes_atual, dia_int)
+        dia_int = dados["data_vencimento"]
         recorrencias = dados["recorrencia"]
-        
-        
+
         try:
             if recorrencias < 1:
                 messagebox.showerror("Erro", "O número de recorrências deve ser superior à 0.")
-            elif dia_int < 1 or dia_int > 28:
-                messagebox.showerror("Erro", "A data de vencimento deve estar entre 1 e 28.")
-                return False
             elif dados["valor"] <= 0:
                 messagebox.showerror("Erro", "O valor da dívida deve ser maior que zero.")
                 return False
-            elif dia_atual > dia_int:
+            elif dia_int < 1 or dia_int > 28:
+                messagebox.showerror("Erro", "A data de vencimento deve estar entre 1 e 28.")
+                return False
+
+            data_base = datetime(ano_atual, mes_atual, dia_int)
+
+            if dia_atual > dia_int:
                 resposta = messagebox.askyesno(
                 "Confirmação",
                 "A data de vencimento é anterior ao dia atual.\n"
@@ -228,7 +228,7 @@ class ControladorDivida(AbstractControlador):
             return True
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível salvar as dívidas recorrentes: {e}")
-            return False
+            return  False
         
     def abrir_tela_recorrencia(self, divida_existente=None):
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
