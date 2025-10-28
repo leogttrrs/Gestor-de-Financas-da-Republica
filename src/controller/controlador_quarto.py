@@ -19,6 +19,11 @@ class ControladorQuarto(AbstractControlador):
         self.tela_gerenciar.mostrar()
 
     def abrir_tela_formulario(self, quarto_existente=None):
+        usuario_logado = self._controlador_sistema.usuario_logado
+        if not usuario_logado or usuario_logado.tipo_usuario != 'administrador':
+            messagebox.showerror("Acesso Negado", "Apenas administradores podem gerenciar quartos.")
+            return
+
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
         TelaFormularioQuarto(root_window, self, quarto_existente)
 
@@ -54,6 +59,11 @@ class ControladorQuarto(AbstractControlador):
             return False, f"Um erro inesperado ocorreu: {e}"
 
     def excluir_quarto(self, quarto_id: int):
+        usuario_logado = self._controlador_sistema.usuario_logado
+        if not usuario_logado or usuario_logado.tipo_usuario != 'administrador':
+            messagebox.showerror("Acesso Negado", "Apenas administradores podem excluir quartos.")
+            return
+
         try:
             quarto = Quarto.buscar_por_id(quarto_id)
             if not quarto:

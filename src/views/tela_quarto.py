@@ -40,9 +40,11 @@ class TelaQuarto(ComponenteBase):
                                background="white")
         title_label.pack(side="left")
 
-        btn_adicionar = ttk.Button(header_frame, text="+ Adicionar Quarto",
-                                   command=self.controlador_sistema.controlador_quarto.abrir_tela_formulario)
-        btn_adicionar.pack(side="right")
+        usuario_logado = self.controlador_sistema.usuario_logado
+        if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+            btn_adicionar = ttk.Button(header_frame, text="+ Adicionar Quarto",
+                                       command=self.controlador_sistema.controlador_quarto.abrir_tela_formulario)
+            btn_adicionar.pack(side="right")
 
         list_container = ttk.Frame(self.frame, style="QuartoBackground.TFrame")
         list_container.pack(fill="both", expand=True)
@@ -66,13 +68,20 @@ class TelaQuarto(ComponenteBase):
         for widget in self.frame_lista.winfo_children():
             widget.destroy()
 
-        headers = ["Número", "Tamanho (m²)", "Status", "Morador", "Ações"]
-        weights = [1, 1, 1, 3, 2]
+        usuario_logado = self.controlador_sistema.usuario_logado
+        if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+            headers = ["Número", "Tamanho (m²)", "Status", "Morador", "Ações"]
+            weights = [1, 1, 1, 3, 2]
+        else:
+            headers = ["Número", "Tamanho (m²)", "Status", "Morador"]
+            weights = [1, 1, 1, 3]
 
         for i, header in enumerate(headers):
             self.frame_lista.columnconfigure(i, weight=weights[i])
-            ttk.Label(self.frame_lista, text=header, font=("Arial", 10, "bold"), style="QuartoLabel.TLabel").grid(row=0, column=i, sticky="w",
-                                                                                      padx=5)
+            ttk.Label(self.frame_lista, text=header, font=("Arial", 10, "bold"), style="QuartoLabel.TLabel").grid(row=0,
+                                                                                                                  column=i,
+                                                                                                                  sticky="w",
+                                                                                                                  padx=5)
 
         for i, quarto in enumerate(quartos):
             row = i + 1
@@ -80,24 +89,32 @@ class TelaQuarto(ComponenteBase):
 
             status_style = "Status.Ocupado.TLabel" if quarto.status == "Ocupado" else "Status.Disponivel.TLabel"
 
-            ttk.Label(self.frame_lista, text=quarto.numero_quarto, style="QuartoLabel.TLabel").grid(row=row, column=0, sticky="w", padx=5, pady=5)
-            ttk.Label(self.frame_lista, text=quarto.tamanho, style="QuartoLabel.TLabel").grid(row=row, column=1, sticky="w", padx=5, pady=5)
+            ttk.Label(self.frame_lista, text=quarto.numero_quarto, style="QuartoLabel.TLabel").grid(row=row, column=0,
+                                                                                                    sticky="w", padx=5,
+                                                                                                    pady=5)
+            ttk.Label(self.frame_lista, text=quarto.tamanho, style="QuartoLabel.TLabel").grid(row=row, column=1,
+                                                                                              sticky="w", padx=5,
+                                                                                              pady=5)
             ttk.Label(self.frame_lista, text=quarto.status, style=status_style).grid(row=row, column=2, sticky="w",
                                                                                      padx=5, pady=5)
-            ttk.Label(self.frame_lista, text=moradores_str, wraplength=200, style="QuartoLabel.TLabel").grid(row=row, column=3, sticky="w", padx=5,
-                                                                                 pady=5)
+            ttk.Label(self.frame_lista, text=moradores_str, wraplength=200, style="QuartoLabel.TLabel").grid(row=row,
+                                                                                                             column=3,
+                                                                                                             sticky="w",
+                                                                                                             padx=5,
+                                                                                                             pady=5)
 
-            action_frame = ttk.Frame(self.frame_lista, style="QuartoBackground.TFrame")
-            action_frame.grid(row=row, column=4, sticky="w", padx=5)
+            if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+                action_frame = ttk.Frame(self.frame_lista, style="QuartoBackground.TFrame")
+                action_frame.grid(row=row, column=4, sticky="w", padx=5)
 
-            btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
-                                    command=lambda
-                                        q=quarto: self.controlador_sistema.controlador_quarto.abrir_tela_formulario(
-                                        quarto_existente=q))
-            btn_editar.pack(side="left")
+                btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
+                                        command=lambda
+                                            q=quarto: self.controlador_sistema.controlador_quarto.abrir_tela_formulario(
+                                            quarto_existente=q))
+                btn_editar.pack(side="left")
 
-            btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
-                                     command=lambda
-                                         q_id=quarto.id: self.controlador_sistema.controlador_quarto.excluir_quarto(
-                                         q_id))
-            btn_excluir.pack(side="left", padx=5)
+                btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
+                                         command=lambda
+                                             q_id=quarto.id: self.controlador_sistema.controlador_quarto.excluir_quarto(
+                                             q_id))
+                btn_excluir.pack(side="left", padx=5)
