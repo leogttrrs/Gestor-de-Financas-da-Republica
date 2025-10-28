@@ -17,7 +17,7 @@ class ControladorDivida(AbstractControlador):
         self.moradores = []
 
     def abre_tela(self, parent_view=None):
-        self.moradores = Morador.buscar_todos()
+        self.moradores = Morador.buscar_com_contrato_ativo()
         self.tela_dividas = TelaDividas(parent_view.content_frame, self._controlador_sistema, self.moradores)
         self._controlador_sistema.tela_atual = self.tela_dividas
         self.tela_dividas.mostrar()
@@ -145,7 +145,8 @@ class ControladorDivida(AbstractControlador):
 
     def abrir_tela_formulario_divida(self, divida_existente=None):
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
-        TelaFormularioDivida(root_window, self, self.moradores, divida_existente)
+        moradores_ativos = Morador.buscar_com_contrato_ativo()
+        TelaFormularioDivida(root_window, self, moradores_ativos, divida_existente)
 
     def salvar_divida(self, dados: dict):
         try:
@@ -169,15 +170,19 @@ class ControladorDivida(AbstractControlador):
                 messagebox.showerror("Erro de Validação", "A data de vencimento é obrigatória.")
                 return False
 
-            divida_antiga = None
-            if dados.get("id"):
-                divida_antiga = Divida.buscar_por_id(dados["id"])
-
-
             morador_id_selecionado = dados['morador_id']
             morador_obj = Morador.buscar_por_id(morador_id_selecionado)
             if not morador_obj:
-                return False, f"Morador com ID {morador_id_selecionado} não encontrado."
+                messagebox.showerror("Erro", f"Morador com ID {morador_id_selecionado} não encontrado.")
+                return False
+
+            if not Morador.tem_contrato_ativo(morador_id_selecionado):
+                messagebox.showerror("Erro", "Não é possível criar dívida para um morador sem contrato ativo.")
+                return False
+
+            divida_antiga = None
+            if dados.get("id"):
+                divida_antiga = Divida.buscar_por_id(dados["id"])
 
             divida_nova = Divida(
                 id=dados.get("id"),
@@ -188,7 +193,6 @@ class ControladorDivida(AbstractControlador):
                 status=dados.get("status", 'pendente')
             )
             divida_nova.salvar()
-
 
             nome_morador_novo = divida_nova.morador.nome if divida_nova.morador else "Desconhecido"
 
@@ -213,7 +217,7 @@ class ControladorDivida(AbstractControlador):
                         detalhes=", ".join(mudancas)
                     )
             else:
-                 Historico.registrar_evento(
+                Historico.registrar_evento(
                     evento="Dívida Criada",
                     morador_nome=nome_morador_novo,
                     divida_descricao=divida_nova.descricao,
@@ -221,7 +225,7 @@ class ControladorDivida(AbstractControlador):
                 )
 
             if self.tela_dividas:
-                 self.tela_dividas.atualizar_todas_abas()
+                self.tela_dividas.atualizar_todas_abas()
             return True
 
         except Exception as e:
@@ -246,16 +250,21 @@ class ControladorDivida(AbstractControlador):
                 messagebox.showerror("Erro", "A data de vencimento deve estar entre 1 e 28.")
                 return False
 
+            morador = dados["morador"]
+            if not Morador.tem_contrato_ativo(morador.id):
+                messagebox.showerror("Erro", "Não é possível criar dívida para um morador sem contrato ativo.")
+                return False
+
             data_base = datetime(ano_atual, mes_atual, dia_int)
 
             if dia_atual > dia_int:
                 resposta = messagebox.askyesno(
-                "Confirmação",
-                "A data de vencimento é anterior ao dia atual.\n"
-                "A primeira dívida será criada para o próximo mês.\n"
-                "Deseja continuar?"
-            )
-                if resposta:  
+                    "Confirmação",
+                    "A data de vencimento é anterior ao dia atual.\n"
+                    "A primeira dívida será criada para o próximo mês.\n"
+                    "Deseja continuar?"
+                )
+                if resposta:
                     novo_mes = mes_atual + 1
                     novo_ano = ano_atual
                     if novo_mes > 12:
@@ -274,7 +283,7 @@ class ControladorDivida(AbstractControlador):
                     morador=dados["morador"],
                     descricao=f"{dados['descricao']} (Parcela {i + 1}/{recorrencias})",
                     valor=dados["valor"],
-                    data_vencimento=nova_data.strftime('%d/%m/%Y'),
+                    data_vencimento=nova_data.strftime('%Y-%m-%d'),
                     status="pendente"
                 )
                 nova_divida.salvar()
@@ -291,11 +300,12 @@ class ControladorDivida(AbstractControlador):
             return True
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível salvar as dívidas recorrentes: {e}")
-            return  False
+            return False
         
     def abrir_tela_recorrencia(self, divida_existente=None):
         root_window = self._controlador_sistema.tela_atual.frame.winfo_toplevel()
-        TelaRecorrencia(root_window, self, self.moradores, divida_existente)
+        moradores_ativos = Morador.buscar_com_contrato_ativo()
+        TelaRecorrencia(root_window, self, moradores_ativos, divida_existente)
 
     def excluir_divida(self, divida_id: int):
         if messagebox.askyesno("Confirmar", "Tem certeza que deseja excluir esta dívida?", icon='warning'):

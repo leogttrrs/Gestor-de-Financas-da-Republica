@@ -4,13 +4,28 @@ from src.database.database_manager import DatabaseManager
 from typing import List
 
 class Morador(Usuario):
-    def __init__(self, cpf: str, nome: str, email: str, telefone: str, senhaCriptografada: str = None, id: int = None, **kwargs):
+    def __init__(self, cpf: str, nome: str, email: str, telefone: str, senhaCriptografada: str = None, id: int = None,
+                 **kwargs):
         super().__init__(cpf, nome, email, telefone, 'morador', senhaCriptografada, id)
 
     @staticmethod
     def buscar_todos() -> List[Morador]:
         db_manager = DatabaseManager()
         query = "SELECT * FROM usuario WHERE tipo_usuario = 'morador' ORDER BY nome"
+        resultados = db_manager.executar_query(query)
+        return [Morador(**r) for r in resultados]
+
+    @staticmethod
+    def buscar_com_contrato_ativo() -> List[Morador]:
+        db_manager = DatabaseManager()
+        query = """
+            SELECT DISTINCT u.* 
+            FROM usuario u
+            INNER JOIN contrato c ON u.id = c.morador_id
+            WHERE u.tipo_usuario = 'morador' 
+            AND c.status = 'ativo'
+            ORDER BY u.nome
+        """
         resultados = db_manager.executar_query(query)
         return [Morador(**r) for r in resultados]
 
