@@ -70,19 +70,17 @@ class DatabaseManager:
                             )
                         """)
 
-
-            # Tabela Contrato
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS contrato (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     morador_id INTEGER NOT NULL,
-                    quarto_id INTEGER NOT NULL,
+                    quarto_id INTEGER,
                     data_inicio DATE NOT NULL,
                     data_fim DATE,
                     valor_aluguel DECIMAL(10,2) NOT NULL,
                     status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('agendado', 'ativo', 'finalizado')),
                     data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (quarto_id) REFERENCES quarto(id),
+                    FOREIGN KEY (quarto_id) REFERENCES quarto(id) ON DELETE SET NULL,
                     FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)

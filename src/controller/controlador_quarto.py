@@ -54,14 +54,43 @@ class ControladorQuarto(AbstractControlador):
             return False, f"Um erro inesperado ocorreu: {e}"
 
     def excluir_quarto(self, quarto_id: int):
-        quarto = Quarto.buscar_por_id(quarto_id)
-        if quarto:
+        try:
+            quarto = Quarto.buscar_por_id(quarto_id)
+            if not quarto:
+                messagebox.showerror("Erro", "Quarto não encontrado.")
+                return
+
             if quarto.possui_contratos_ativos():
                 messagebox.showerror("Ação Proibida", "Não é possível excluir um quarto com contratos ativos.")
                 return
+
+            if quarto.possui_contratos_finalizados():
+                resposta = messagebox.askyesno(
+                    "Confirmar Exclusão",
+                    "Este quarto possui contratos históricos (finalizados).\n"
+                    "Os contratos finalizados serão desassociados deste quarto.\n"
+                    "Deseja continuar com a exclusão?",
+                    icon='warning'
+                )
+                if not resposta:
+                    return
+
             Quarto.deletar(quarto_id)
+            messagebox.showinfo("Sucesso", "Quarto excluído com sucesso!")
+
             if self.tela_gerenciar:
                 self.tela_gerenciar.atualizar_lista()
+
+        except ValueError as e:
+            messagebox.showerror("Erro", str(e))
+        except sqlite3.IntegrityError as e:
+            messagebox.showerror(
+                "Erro de Banco de Dados",
+                f"Não foi possível excluir o quarto devido a restrições do banco.\n\n"
+                f"Detalhes: {e}"
+            )
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro inesperado: {e}")
 
     def buscar_quarto_por_id(self, quarto_id: int) -> Optional['Quarto']:
         return Quarto.buscar_por_id(quarto_id)

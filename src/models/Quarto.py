@@ -135,6 +135,20 @@ class Quarto:
     @staticmethod
     def deletar(quarto_id: int) -> int:
         db_manager = DatabaseManager()
+
+        query_ativos = "SELECT COUNT(*) as total FROM contrato WHERE quarto_id = ? AND status = 'ativo'"
+        contratos_ativos = db_manager.executar_query(query_ativos, (quarto_id,))[0]['total']
+
+        if contratos_ativos > 0:
+            raise ValueError("Não é possível excluir um quarto com contratos ativos.")
+
+        query_finalizados = "SELECT COUNT(*) as total FROM contrato WHERE quarto_id = ? AND status = 'finalizado'"
+        contratos_finalizados = db_manager.executar_query(query_finalizados, (quarto_id,))[0]['total']
+
+        if contratos_finalizados > 0:
+            comando_update = "UPDATE contrato SET quarto_id = NULL WHERE quarto_id = ? AND status = 'finalizado'"
+            db_manager.executar_comando(comando_update, (quarto_id,))
+
         comando = "DELETE FROM quarto WHERE id = ?"
         return db_manager.executar_comando(comando, (quarto_id,))
     
@@ -144,7 +158,24 @@ class Quarto:
         return Quarto.deletar(self.id)
 
     def possui_contratos_ativos(self) -> bool:
-        return len(self.morador) > 0
+        if self.id is None:
+            return False
+
+        db_manager = DatabaseManager()
+        query = """SELECT COUNT(*) as total FROM contrato 
+                  WHERE quarto_id = ? AND status = 'ativo'"""
+        resultado = db_manager.executar_query(query, (self.id,))
+        return resultado[0]['total'] > 0 if resultado else False
+
+    def possui_contratos_finalizados(self) -> bool:
+        if self.id is None:
+            return False
+
+        db_manager = DatabaseManager()
+        query = """SELECT COUNT(*) as total FROM contrato 
+                  WHERE quarto_id = ? AND status = 'finalizado'"""
+        resultado = db_manager.executar_query(query, (self.id,))
+        return resultado[0]['total'] > 0 if resultado else False
 
     def obter_vagas_disponiveis(self) -> int:
         contratos_ativos = len(self.morador)
