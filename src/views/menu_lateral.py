@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import List, Tuple, Callable
+from src.models.Morador import Morador
 
 
 class MenuLateral:
@@ -121,18 +122,39 @@ class MenuMorador(MenuLateral):
         self.callback_navegacao = callback_navegacao
         super().__init__(parent, "República", "Morador")
         self._definir_opcoes_morador()
-    
+
     def _definir_opcoes_morador(self):
-        opcoes = [
-            ("🏠 Visão Geral", lambda: self._navegar("dashboard")),
-            ("👥 Moradores", lambda: self._navegar("moradores")),
-            ("💰 Dívidas", lambda: self._navegar("dividas")),
-            ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
-            ("🔔 Alertas", lambda: self._navegar("alertas")),
-            ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
-        ]
+        tem_contrato_ativo = Morador.tem_contrato_ativo(self.usuario_logado.id) if self.usuario_logado else False
+
+        if tem_contrato_ativo:
+            opcoes = [
+                ("🏠 Visão Geral", lambda: self._navegar("dashboard")),
+                ("👥 Moradores", lambda: self._navegar("moradores")),
+                ("🏠 República", lambda: self._navegar("republica")),
+                ("🛏 Quartos", lambda: self._navegar("quartos")),
+                ("📋 Contratos", lambda: self._navegar("contratos")),
+                ("💰 Dívidas", lambda: self._navegar("dividas")),
+                ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
+                ("🔔 Alertas", lambda: self._navegar("alertas")),
+                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
+            ]
+        else:
+            opcoes = [
+                ("💰 Dívidas", lambda: self._navegar("dividas")),
+                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
+            ]
+            self._atualizar_subtitulo_acesso_limitado()
+
         self.definir_opcoes_menu(opcoes)
-    
+
+    def _atualizar_subtitulo_acesso_limitado(self):
+        for widget in self.frame.winfo_children():
+            if isinstance(widget, ttk.Frame) and hasattr(widget, 'winfo_children'):
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Label) and "Morador" in child.cget("text"):
+                        child.configure(text="Morador (Acesso Limitado)", foreground="orange")
+                        break
+
     def _navegar(self, secao):
         if self.callback_navegacao:
             self.callback_navegacao(secao)

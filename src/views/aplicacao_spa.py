@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 from typing import Dict, Callable, Any
 from .tela_cadastro_base import TelaCadastroBase
 from .estilos import EstilosApp
+from src.models.Administrador import Administrador
+from src.models.Morador import Morador
 
 
 class ComponenteBase:
@@ -631,8 +633,24 @@ class AplicacaoSPA:
             self.componente_atual.mostrar()
     
     def _on_login_success(self, usuario):
-        tela_admin = self._criar_tela_administrador(usuario)
-        self.mostrar_componente("perfil_admin")
+        if isinstance(usuario, Administrador):
+            self._criar_tela_administrador(usuario)
+            self.mostrar_componente("perfil_admin")
+        elif isinstance(usuario, Morador):
+            self._criar_tela_morador(usuario)
+            self.mostrar_componente("perfil_morador")
+
+    def _criar_tela_morador(self, usuario):
+        from .tela_perfil import TelaPerfilMorador
+
+        tela_morador = TelaPerfilMorador(
+            self.container_principal,
+            self.controlador_sistema,
+            usuario,
+            on_logout=lambda: self.mostrar_componente("login")
+        )
+        self.componentes["perfil_morador"] = tela_morador
+        return tela_morador
     
     def _on_cadastro_admin_success(self):
         messagebox.showinfo("Sucesso", "Administrador cadastrado com sucesso! Faça login para continuar.")

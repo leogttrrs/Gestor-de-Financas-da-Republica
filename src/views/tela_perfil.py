@@ -24,22 +24,22 @@ class TelaComMenuLateral(ComponenteBase):
         
         if self.tipo_usuario == "admin":
             self.menu_lateral = MenuAdministrador(
-                self.frame, 
-                self.usuario_logado, 
+                self.frame,
+                self.usuario_logado,
                 callback_navegacao=self._navegar_secao
             )
         else:
             self.menu_lateral = MenuMorador(
-                self.frame, 
-                self.usuario_logado, 
+                self.frame,
+                self.usuario_logado,
                 callback_navegacao=self._navegar_secao
             )
-        
+
         self.menu_lateral.definir_callback_sair(self._fazer_logout)
-        
+
         self.content_frame = ttk.Frame(self.frame)
         self.content_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
-        
+
         self._mostrar_conteudo_inicial()
     
     def _navegar_secao(self, secao):
