@@ -30,3 +30,9 @@ class Historico:
         db = DatabaseManager()
         query = "SELECT * FROM historico ORDER BY timestamp DESC"
         return [Historico(**r) for r in db.executar_query(query)]
+
+    @staticmethod
+    def buscar_por_morador(morador_nome: str) -> List[Historico]:
+        db = DatabaseManager()
+        query = "SELECT * FROM historico WHERE morador_nome = ? ORDER BY timestamp DESC"
+        return [Historico(**r) for r in db.executar_query(query, (morador_nome,))]

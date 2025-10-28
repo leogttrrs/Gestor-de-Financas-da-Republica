@@ -28,6 +28,8 @@ class TelaDividas(ComponenteBase):
         style.configure("Status.Quitada.TLabel", foreground="#28a745", background="white", font=('Arial', 9, 'bold'))
         style.configure("Status.Pendente.TLabel", foreground="#6c757d", background="white", font=('Arial', 9, 'bold'))
         style.configure("Status.Vencida.TLabel", foreground="#dc3545", background="white", font=('Arial', 9, 'bold'))
+        style.configure("Status.Confirmado.TLabel", foreground="#28a745", background="white", font=('Arial', 9, 'bold'))
+        style.configure("Status.Cancelado.TLabel", foreground="#dc3545", background="white", font=('Arial', 9, 'bold'))
         style.configure("Editar.TButton", foreground="white", background="#007bff", borderwidth=0, font=('Arial', 9))
         style.configure("Excluir.TButton", foreground="white", background="#dc3545", borderwidth=0, font=('Arial', 9))
         style.configure("Salvar.TButton", foreground="white", background="#28a745", borderwidth=0, font=('Arial', 9))
@@ -49,18 +51,30 @@ class TelaDividas(ComponenteBase):
         notebook.pack(fill="both", expand=True)
 
         self.frame_lista_dividas = ttk.Frame(notebook, padding=10, style="Dividas.TFrame")
-        frame_nova_divida = ttk.Frame(notebook, padding=20, style="Dividas.TFrame")
         self.frame_avaliar_pagamentos = ttk.Frame(notebook, padding=10, style="Dividas.TFrame")
         self.frame_historico = ttk.Frame(notebook, padding=10, style="Dividas.TFrame")
 
         notebook.add(self.frame_lista_dividas, text="  Dívidas Atuais  ")
-        notebook.add(self.frame_avaliar_pagamentos, text="  Avaliar Pagamentos  ")
+
+        usuario_logado = self.controlador_sistema.usuario_logado
+        if usuario_logado and usuario_logado.tipo_usuario == 'morador':
+            notebook.add(self.frame_avaliar_pagamentos, text="  Acompanhar Pagamentos  ")
+        else:
+            notebook.add(self.frame_avaliar_pagamentos, text="  Avaliar Pagamentos  ")
+
         notebook.add(self.frame_historico, text="  Histórico  ")
 
         self._popular_aba_lista_dividas()
-        self._popular_aba_nova_divida(frame_nova_divida)
-        self.controlador_sistema.controlador_divida.carregar_pagamentos_pendentes(self.frame_avaliar_pagamentos)
-        self.controlador_sistema.controlador_divida.carregar_historico(self.frame_historico)
+        self._carregar_conteudo_abas()
+
+    def _carregar_conteudo_abas(self):
+        usuario_logado = self.controlador_sistema.usuario_logado
+        self.controlador_sistema.controlador_divida.carregar_pagamentos_pendentes(
+            self.frame_avaliar_pagamentos, usuario_logado
+        )
+        self.controlador_sistema.controlador_divida.carregar_historico(
+            self.frame_historico, usuario_logado
+        )
 
     def _popular_aba_lista_dividas(self):
         controles_frame = ttk.Frame(self.frame_lista_dividas, style="Dividas.TFrame")
@@ -77,13 +91,15 @@ class TelaDividas(ComponenteBase):
                                          command=self.atualizar_lista)
         check_quitadas.pack(side="left", padx=20)
 
-        btn_adicionar_divida = ttk.Button(controles_frame, text="+ Adicionar Nova Dívida",
-                                   command=self.controlador_sistema.controlador_divida.abrir_tela_formulario_divida)
-        btn_adicionar_divida.pack(side="right")
-        
-        btn_adicionar_recorrencia = ttk.Button(controles_frame, text="+ Adicionar Nova Recorrência",
-                                   command=self.controlador_sistema.controlador_divida.abrir_tela_recorrencia)
-        btn_adicionar_recorrencia.pack(side="right")
+        usuario_logado = self.controlador_sistema.usuario_logado
+        if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+            btn_adicionar_divida = ttk.Button(controles_frame, text="+ Adicionar Nova Dívida",
+                                              command=self.controlador_sistema.controlador_divida.abrir_tela_formulario_divida)
+            btn_adicionar_divida.pack(side="right")
+
+            btn_adicionar_recorrencia = ttk.Button(controles_frame, text="+ Adicionar Nova Recorrência",
+                                                   command=self.controlador_sistema.controlador_divida.abrir_tela_recorrencia)
+            btn_adicionar_recorrencia.pack(side="right", padx=5)
 
         self.container_lista = ttk.Frame(self.frame_lista_dividas, style="Dividas.TFrame")
         self.container_lista.pack(fill="both", expand=True)
@@ -97,18 +113,22 @@ class TelaDividas(ComponenteBase):
 
     def atualizar_todas_abas(self):
         self.atualizar_lista()
-        if self.frame_avaliar_pagamentos:
-            self.controlador_sistema.controlador_divida.carregar_pagamentos_pendentes(self.frame_avaliar_pagamentos)
-        if self.frame_historico:
-            self.controlador_sistema.controlador_divida.carregar_historico(self.frame_historico)
+        self._carregar_conteudo_abas()
 
     def atualizar_lista(self, event=None):
-        if not self.container_lista: return
+        if not self.container_lista:
+            return
 
         ordenar_por = self.ordenacao_var.get()
         incluir_quitadas = self.mostrar_quitadas_var.get() == 1
+        usuario_logado = self.controlador_sistema.usuario_logado
 
-        if self.controlador_sistema.usuario_logado:
-            tipo_usuario = self.controlador_sistema.usuario_logado.tipo_usuario
-            self.controlador_sistema.controlador_divida.carregar_dividas_na_view(self.container_lista, tipo_usuario,
-                                                                                 ordenar_por, incluir_quitadas)
+        if usuario_logado:
+            tipo_usuario = usuario_logado.tipo_usuario
+            self.controlador_sistema.controlador_divida.carregar_dividas_na_view(
+                self.container_lista,
+                tipo_usuario,
+                ordenar_por,
+                incluir_quitadas,
+                usuario_logado
+            )

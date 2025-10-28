@@ -23,10 +23,14 @@ class ControladorDivida(AbstractControlador):
         self.tela_dividas.mostrar()
 
     def carregar_dividas_na_view(self, container: ttk.Frame, tipo_usuario: str, ordenar_por: str,
-                                 incluir_quitadas: bool):
-        dividas = Divida.buscar_com_filtros(ordenar_por, incluir_quitadas)
+                                 incluir_quitadas: bool, usuario_logado=None):
+        if tipo_usuario == 'morador' and usuario_logado:
+            dividas = Divida.buscar_por_morador(usuario_logado.id, incluir_quitadas)
+        else:
+            dividas = Divida.buscar_com_filtros(ordenar_por, incluir_quitadas)
 
-        for widget in container.winfo_children(): widget.destroy()
+        for widget in container.winfo_children():
+            widget.destroy()
 
         if not dividas:
             ttk.Label(container, text="Nenhuma dívida encontrada para os filtros selecionados.", font=("Arial", 12),
@@ -34,7 +38,10 @@ class ControladorDivida(AbstractControlador):
             return
 
         headers = ["Morador", "Descrição", "Valor", "Vencimento", "Status"]
-        if tipo_usuario == 'administrador': headers.append("Ações")
+        if tipo_usuario == 'administrador':
+            headers.append("Ações")
+        elif tipo_usuario == 'morador':
+            headers.append("Ações")
 
         for i, header in enumerate(headers):
             container.columnconfigure(i, weight=(2 if header == "Descrição" else 1))
@@ -60,12 +67,16 @@ class ControladorDivida(AbstractControlador):
                 status_style = "Status.Vencida.TLabel"
                 vencimento_style = "Status.Vencida.TLabel"
 
-            ttk.Label(container, text=divida.nome_morador, style="Dividas.TLabel").grid(row=row, column=0, sticky="w", padx=5, pady=3)
-
-            ttk.Label(container, text=divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky="w", padx=5, pady=3)
-            ttk.Label(container, text=f"R$ {divida.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky="w", padx=5, pady=3)
-            ttk.Label(container, text=data_venc_formatada, style=vencimento_style).grid(row=row, column=3, sticky="w", padx=5, pady=3)
-            ttk.Label(container, text=status_texto, style=status_style).grid(row=row, column=4, sticky="w", padx=5, pady=3)
+            ttk.Label(container, text=divida.nome_morador, style="Dividas.TLabel").grid(row=row, column=0, sticky="w",
+                                                                                        padx=5, pady=3)
+            ttk.Label(container, text=divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky="w",
+                                                                                     padx=5, pady=3)
+            ttk.Label(container, text=f"R$ {divida.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2,
+                                                                                             sticky="w", padx=5, pady=3)
+            ttk.Label(container, text=data_venc_formatada, style=vencimento_style).grid(row=row, column=3, sticky="w",
+                                                                                        padx=5, pady=3)
+            ttk.Label(container, text=status_texto, style=status_style).grid(row=row, column=4, sticky="w", padx=5,
+                                                                             pady=3)
 
             if tipo_usuario == 'administrador':
                 action_frame = ttk.Frame(container, style="Dividas.TFrame")
@@ -74,10 +85,62 @@ class ControladorDivida(AbstractControlador):
                 btn_editar = ttk.Button(action_frame, text="Editar", style="Editar.TButton",
                                         command=lambda d=divida: self.abrir_tela_formulario_divida(divida_existente=d))
                 btn_editar.pack(side="left")
-                
+
                 btn_excluir = ttk.Button(action_frame, text="Excluir", style="Excluir.TButton",
                                          command=lambda d_id=divida.id: self.excluir_divida(d_id))
                 btn_excluir.pack(side="left", padx=5)
+
+            elif tipo_usuario == 'morador' and divida.status == 'pendente':
+                action_frame = ttk.Frame(container, style="Dividas.TFrame")
+                action_frame.grid(row=row, column=5, sticky="w", padx=5)
+
+                pagamentos_pendentes = Pagamento.buscar_por_divida_e_status(divida.id, 'pendente')
+
+                if pagamentos_pendentes:
+                    btn_texto = "Pagamento Solicitado"
+                    btn_state = "disabled"
+                else:
+                    btn_texto = "Solicitar Pagamento"
+                    btn_state = "normal"
+
+                btn_pagamento = ttk.Button(
+                    action_frame,
+                    text=btn_texto,
+                    style="Salvar.TButton",
+                    command=lambda d=divida: self.solicitar_pagamento(d),
+                    state=btn_state
+                )
+                btn_pagamento.pack(side="left")
+
+    def solicitar_pagamento(self, divida: Divida):
+        try:
+            pagamentos_pendentes = Pagamento.buscar_por_divida_e_status(divida.id, 'pendente')
+
+            if pagamentos_pendentes:
+                messagebox.showinfo("Informação", "Já existe uma solicitação de pagamento pendente para esta dívida.")
+                return
+
+            novo_pagamento = Pagamento(
+                divida=divida,
+                valor=divida.valor,
+                data_pagamento=date.today().strftime('%Y-%m-%d'),
+                status='pendente'
+            )
+            novo_pagamento.salvar()
+
+            Historico.registrar_evento(
+                evento="Solicitação de Pagamento",
+                morador_nome=divida.morador.nome,
+                divida_descricao=divida.descricao,
+                valor=divida.valor,
+                detalhes="Morador solicitou registro de pagamento"
+            )
+
+            messagebox.showinfo("Sucesso", "Solicitação de pagamento registrada com sucesso!")
+            self.tela_dividas.atualizar_todas_abas()
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível solicitar o pagamento: {e}")
                 
 
     def abrir_tela_formulario_divida(self, divida_existente=None):
@@ -242,18 +305,28 @@ class ControladorDivida(AbstractControlador):
             except Exception as e:
                 messagebox.showerror("Erro", f"Não foi possível excluir a dívida: {e}")
 
-    def carregar_pagamentos_pendentes(self, container: ttk.Frame):
-        pagamentos = Pagamento.buscar_pendentes()
-        for widget in container.winfo_children(): widget.destroy()
+    def carregar_pagamentos_pendentes(self, container: ttk.Frame, usuario_logado=None):
+        if usuario_logado and usuario_logado.tipo_usuario == 'morador':
+            pagamentos = Pagamento.buscar_por_morador(usuario_logado.id)
+        else:
+            pagamentos = Pagamento.buscar_pendentes()
+
+        for widget in container.winfo_children():
+            widget.destroy()
+
         if not pagamentos:
-            ttk.Label(container, text="Nenhuma solicitação de pagamento pendente.", style="Dividas.TLabel").pack(
-                expand=True)
+            texto = "Nenhuma solicitação de pagamento pendente." if usuario_logado and usuario_logado.tipo_usuario == 'administrador' else "Nenhuma solicitação de pagamento para acompanhar."
+            ttk.Label(container, text=texto, style="Dividas.TLabel").pack(expand=True)
             return
 
-        headers = ["Morador", "Dívida", "Valor Pago", "Data", "Ações"]
+        headers = ["Morador", "Dívida", "Valor Pago", "Data", "Status"]
+        if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+            headers.append("Ações")
+
         for i, h in enumerate(headers):
             container.columnconfigure(i, weight=1)
-            ttk.Label(container, text=h, style="Dividas.TLabel", font=('Arial', 10, 'bold')).grid(row=0, column=i, sticky='w', padx=5)
+            ttk.Label(container, text=h, style="Dividas.TLabel", font=('Arial', 10, 'bold')).grid(row=0, column=i,
+                                                                                                  sticky='w', padx=5)
 
         for i, pag in enumerate(pagamentos):
             row = i + 1
@@ -263,19 +336,29 @@ class ControladorDivida(AbstractControlador):
             except (ValueError, TypeError):
                 data_pag_formatada = pag.data_pagamento
 
-            ttk.Label(container, text=pag.divida.morador.nome, style="Dividas.TLabel").grid(row=row, column=0, sticky='w', padx=5, pady=4)
-            ttk.Label(container, text=pag.divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky='w', padx=5, pady=4)
-            ttk.Label(container, text=f"R$ {pag.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky='w', padx=5, pady=4)
-            ttk.Label(container, text=data_pag_formatada, style="Dividas.TLabel").grid(row=row, column=3, sticky='w', padx=5, pady=4)
+            status_texto = pag.status.capitalize()
+            status_style = f"Status.{status_texto}.TLabel"
 
-            action_frame = ttk.Frame(container, style="Dividas.TFrame")
-            action_frame.grid(row=row, column=4, sticky='w')
-            btn_aceitar = ttk.Button(action_frame, text="Aceitar", style="Salvar.TButton",
-                                     command=lambda p=pag: self.aceitar_pagamento(p))
-            btn_aceitar.pack(side='left')
-            btn_recusar = ttk.Button(action_frame, text="Recusar", style="Excluir.TButton",
-                                     command=lambda p=pag: self.recusar_pagamento(p))
-            btn_recusar.pack(side='left', padx=5)
+            ttk.Label(container, text=pag.divida.morador.nome, style="Dividas.TLabel").grid(row=row, column=0,
+                                                                                            sticky='w', padx=5, pady=4)
+            ttk.Label(container, text=pag.divida.descricao, style="Dividas.TLabel").grid(row=row, column=1, sticky='w',
+                                                                                         padx=5, pady=4)
+            ttk.Label(container, text=f"R$ {pag.valor:.2f}", style="Dividas.TLabel").grid(row=row, column=2, sticky='w',
+                                                                                          padx=5, pady=4)
+            ttk.Label(container, text=data_pag_formatada, style="Dividas.TLabel").grid(row=row, column=3, sticky='w',
+                                                                                       padx=5, pady=4)
+            ttk.Label(container, text=status_texto, style=status_style).grid(row=row, column=4, sticky='w', padx=5,
+                                                                             pady=4)
+
+            if usuario_logado and usuario_logado.tipo_usuario == 'administrador' and pag.status == 'pendente':
+                action_frame = ttk.Frame(container, style="Dividas.TFrame")
+                action_frame.grid(row=row, column=5, sticky='w')
+                btn_aceitar = ttk.Button(action_frame, text="Aceitar", style="Salvar.TButton",
+                                         command=lambda p=pag: self.aceitar_pagamento(p))
+                btn_aceitar.pack(side='left')
+                btn_recusar = ttk.Button(action_frame, text="Recusar", style="Excluir.TButton",
+                                         command=lambda p=pag: self.recusar_pagamento(p))
+                btn_recusar.pack(side='left', padx=5)
 
     def aceitar_pagamento(self, pagamento: Pagamento):
         try:
@@ -286,7 +369,8 @@ class ControladorDivida(AbstractControlador):
                     evento="Pagamento Confirmado",
                     morador_nome=pagamento.divida.morador.nome,
                     divida_descricao=pagamento.divida.descricao,
-                    valor=pagamento.valor
+                    valor=pagamento.valor,
+                    detalhes="Administrador confirmou o pagamento"
                 )
 
             messagebox.showinfo("Sucesso", "Pagamento confirmado e dívida quitada.")
@@ -301,17 +385,22 @@ class ControladorDivida(AbstractControlador):
                 evento="Pagamento Recusado",
                 morador_nome=pagamento.divida.morador.nome,
                 divida_descricao=pagamento.divida.descricao,
-                valor=pagamento.valor
+                valor=pagamento.valor,
+                detalhes="Administrador recusou o pagamento"
             )
-            messagebox.showinfo("Sucesso", "Pagamento recusado.")
+            messagebox.showinfo("Sucesso", "Pagamento recusado. A dívida continua pendente.")
             self.tela_dividas.atualizar_todas_abas()
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível recusar o pagamento: {e}")
 
-    def carregar_historico(self, container: ttk.Frame):
-        for widget in container.winfo_children(): widget.destroy()
+    def carregar_historico(self, container: ttk.Frame, usuario_logado=None):
+        for widget in container.winfo_children():
+            widget.destroy()
 
-        eventos_historico = Historico.buscar_todos()
+        if usuario_logado and usuario_logado.tipo_usuario == 'morador':
+            eventos_historico = Historico.buscar_por_morador(usuario_logado.nome)
+        else:
+            eventos_historico = Historico.buscar_todos()
 
         if not eventos_historico:
             ttk.Label(container, text="Nenhum histórico para exibir.", style="Dividas.TLabel").pack(expand=True)
@@ -347,7 +436,8 @@ class ControladorDivida(AbstractControlador):
 
     def recarregar_abas_secundarias(self):
         if self.tela_dividas:
+            usuario_logado = self._controlador_sistema.usuario_logado
             if self.tela_dividas.frame_avaliar_pagamentos:
-                self.carregar_pagamentos_pendentes(self.tela_dividas.frame_avaliar_pagamentos)
+                self.carregar_pagamentos_pendentes(self.tela_dividas.frame_avaliar_pagamentos, usuario_logado)
             if self.tela_dividas.frame_historico:
-                self.carregar_historico(self.tela_dividas.frame_historico)
+                self.carregar_historico(self.tela_dividas.frame_historico, usuario_logado)

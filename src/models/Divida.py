@@ -81,11 +81,45 @@ class Divida:
         return Divida(morador=morador_obj, **dados_divida)
 
     @staticmethod
-    def buscar_com_filtros(ordenar_por: str, incluir_quitadas: bool) -> List[Divida]:
+    def buscar_por_morador(morador_id: int, incluir_quitadas: bool = False) -> List[Divida]:
+        db = DatabaseManager()
+        query = "SELECT * FROM divida WHERE morador_id = ?"
+        params = [morador_id]
+
+        if not incluir_quitadas:
+            query += " AND status = 'pendente'"
+
+        query += " ORDER BY data_vencimento ASC"
+
+        resultados = db.executar_query(query, tuple(params))
+        dividas = []
+
+        for row in resultados:
+            morador_obj = Morador.buscar_por_id(morador_id)
+            if morador_obj:
+                row_copy = dict(row)
+                row_copy.pop('morador_id', None)
+                divida_obj = Divida(morador=morador_obj, **row_copy)
+                dividas.append(divida_obj)
+
+        return dividas
+
+    @staticmethod
+    def buscar_com_filtros(ordenar_por: str, incluir_quitadas: bool, morador_id: Optional[int] = None) -> List[Divida]:
         db = DatabaseManager()
         query = "SELECT d.* FROM divida d"
         join_usuario = ""
         params = []
+
+        if morador_id is not None:
+            query += " WHERE d.morador_id = ?"
+            params.append(morador_id)
+
+            if not incluir_quitadas:
+                query += " AND d.status = 'pendente'"
+        else:
+            if not incluir_quitadas:
+                query += " WHERE d.status = 'pendente'"
 
         if ordenar_por == "Morador":
             join_usuario = " JOIN usuario u ON d.morador_id = u.id"
@@ -97,11 +131,16 @@ class Divida:
         else:
             order_clause = " ORDER BY d.data_criacao DESC"
 
-        where_clause = ""
-        if not incluir_quitadas:
-            where_clause = " WHERE d.status = 'pendente'"
+        if "WHERE" not in query and order_clause:
+            query += order_clause
+        elif "WHERE" in query and order_clause:
+            query += order_clause
 
-        query += join_usuario + where_clause + order_clause
+        if join_usuario:
+            if "WHERE" in query:
+                query = query.replace("WHERE", join_usuario + " WHERE")
+            else:
+                query += join_usuario
 
         resultados = db.executar_query(query, tuple(params))
         dividas = []
