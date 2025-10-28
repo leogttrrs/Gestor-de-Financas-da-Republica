@@ -10,7 +10,7 @@ class ControladorAdministrador(AbstractControlador):
 
     def cadastrar_administrador(self, cpf: str, nome: str, email: str, telefone: str, senha: str) -> Tuple[bool, str]:
         try:
-            if Administrador.existe_algum():
+            if Administrador.existe_algum(tipo_usuario='administrador'):
                 return False, "Já existe um administrador no sistema. Não é possível criar outro."
             admin_para_salvar = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone,
                                               senhaCriptografada=None)
@@ -21,7 +21,7 @@ class ControladorAdministrador(AbstractControlador):
             if not valido:
                 return False, mensagem
 
-            sucesso, mensagem = admin_para_salvar.salvar()
+            sucesso, mensagem = Administrador.salvar_usuario(admin_para_salvar)
 
             if sucesso:
                 try:

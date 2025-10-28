@@ -76,7 +76,7 @@ class TelaQuarto(ComponenteBase):
 
         for i, quarto in enumerate(quartos):
             row = i + 1
-            moradores_str = ", ".join(quarto.moradores) if quarto.moradores else "Vazio"
+            moradores_str = ", ".join(m.nome for m in quarto.morador) if quarto.morador else "Vazio"
 
             status_style = "Status.Ocupado.TLabel" if quarto.status == "Ocupado" else "Status.Disponivel.TLabel"
 
