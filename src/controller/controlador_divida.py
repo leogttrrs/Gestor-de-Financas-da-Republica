@@ -25,7 +25,7 @@ class ControladorDivida(AbstractControlador):
     def carregar_dividas_na_view(self, container: ttk.Frame, tipo_usuario: str, ordenar_por: str,
                                  incluir_quitadas: bool, usuario_logado=None):
         if tipo_usuario == 'morador' and usuario_logado:
-            dividas = Divida.buscar_por_morador(usuario_logado.id, incluir_quitadas)
+            dividas = Divida.buscar_por_morador_com_filtros(usuario_logado.id, incluir_quitadas)
         else:
             dividas = Divida.buscar_com_filtros(ordenar_por, incluir_quitadas)
 
