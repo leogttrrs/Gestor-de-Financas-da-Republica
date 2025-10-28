@@ -80,19 +80,27 @@ def popular_banco():
 
         # --- 5. CRIAR DÍVIDAS E PAGAMENTOS ---
         print("\n[PASSO 5/5] Criando dívidas e pagamentos de exemplo...")
-        divida_id = db_manager.executar_comando(
+        # Dívida 1: João - já paga (quitada)
+        divida_joao_id = db_manager.executar_comando(
             "INSERT INTO divida (morador_id, valor, descricao, data_vencimento, status) VALUES (?, ?, ?, ?, ?)",
-            (usuarios_ids['João da Silva'], 150.00, 'Conta de Luz', date.today() + timedelta(days=10), 'pendente'))
-        print(f"  - Dívida 'Conta de Luz' criada para João da Silva.")
+            (usuarios_ids['João da Silva'], 150.00, 'Conta de Luz', (date.today() - timedelta(days=5)).isoformat(), 'quitada'))
+        print(f"  - Dívida 'Conta de Luz' (quitada) criada para João da Silva (ID: {divida_joao_id}).")
         db_manager.executar_comando(
             "INSERT INTO pagamento (divida_id, valor, data_pagamento, status) VALUES (?, ?, ?, ?)",
-            (divida_id, 150.00, date.today(), 'pendente'))
-        print(f"  - Solicitação de pagamento para 'Conta de Luz' criada.")
+            (divida_joao_id, 150.00, date.today().isoformat(), 'confirmado'))
+        print(f"  - Pagamento confirmado para 'Conta de Luz'.")
 
-        db_manager.executar_comando(
+        # Dívida 2: Maria - vencida e pendente
+        divida_maria_id = db_manager.executar_comando(
             "INSERT INTO divida (morador_id, valor, descricao, data_vencimento, status) VALUES (?, ?, ?, ?, ?)",
-            (usuarios_ids['Maria Oliveira'], 75.50, 'Internet', date.today() - timedelta(days=15), 'pendente'))
-        print(f"  - Dívida 'Internet' (vencida) criada para Maria Oliveira.")
+            (usuarios_ids['Maria Oliveira'], 75.50, 'Internet', (date.today() - timedelta(days=15)).isoformat(), 'pendente'))
+        print(f"  - Dívida 'Internet' (vencida) criada para Maria Oliveira (ID: {divida_maria_id}).")
+
+        # Dívida 3: Carlos - vencida há mais tempo (pendente)
+        divida_carlos_id = db_manager.executar_comando(
+            "INSERT INTO divida (morador_id, valor, descricao, data_vencimento, status) VALUES (?, ?, ?, ?, ?)",
+            (usuarios_ids['Carlos Pereira'], 200.00, 'Aluguel Atrasado', (date.today() - timedelta(days=40)).isoformat(), 'pendente'))
+        print(f"  - Dívida 'Aluguel Atrasado' (vencida) criada para Carlos Pereira (ID: {divida_carlos_id}).")
 
     except sqlite3.OperationalError as e:
         print(
