@@ -81,6 +81,22 @@ class Divida:
         return Divida(morador=morador_obj, **dados_divida)
 
     @staticmethod
+    def buscar_por_morador(morador_id: int) -> List['Divida']:
+        db = DatabaseManager()
+        query = "SELECT * FROM divida WHERE morador_id = ?"
+        resultados = db.executar_query(query, (morador_id,))
+
+        dividas = []
+        for row in resultados:
+            morador_obj = Morador.buscar_por_id(row['morador_id'])
+            if not morador_obj:
+                continue
+            row_copy = dict(row)
+            row_copy.pop('morador_id', None)
+            dividas.append(Divida(morador=morador_obj, **row_copy))
+        return dividas
+
+    @staticmethod
     def buscar_com_filtros(ordenar_por: str, incluir_quitadas: bool) -> List[Divida]:
         db = DatabaseManager()
         query = "SELECT d.* FROM divida d"

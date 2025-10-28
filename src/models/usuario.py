@@ -195,16 +195,29 @@ class Usuario(ABC):
                 row = cursor.fetchone()
                 if row:
                     tipo = row['tipo_usuario']
-                    senha = row['senhaCriptografada']
-                    usuario_id = row['id']
                     if tipo == 'administrador':
                         from .Administrador import Administrador
-                        return Administrador(row['cpf'], row['nome'], row['email'], row['telefone'], senha, usuario_id)
+                        return Administrador(
+                            cpf=row['cpf'],
+                            nome=row['nome'],
+                            email=row['email'],
+                            telefone=row['telefone'],
+                            senhaCriptografada=row['senhaCriptografada'],
+                            id=row['id']
+                        )
                     elif tipo == 'morador':
                         from .Morador import Morador
-                        return Morador(row['cpf'], row['nome'], row['email'], row['telefone'], senha, usuario_id)
+                        return Morador(
+                            cpf=row['cpf'],
+                            nome=row['nome'],
+                            email=row['email'],
+                            telefone=row['telefone'],
+                            senhaCriptografada=row['senhaCriptografada'],
+                            id=row['id']
+                        )
                 return None
-        except Exception:
+        except Exception as e:
+            print(f"Erro ao buscar usuário por CPF: {e}")
             return None
 
     @staticmethod
@@ -231,6 +244,46 @@ class Usuario(ABC):
                     
         except Exception as e:
             return False, f"Erro ao alterar senha: {str(e)}"
+
+    @staticmethod
+    def buscar_por_id(id: int, tipo_usuario: str = None) -> Optional['Usuario']:
+        try:
+            with DatabaseManager() as db:
+                cursor = db.cursor()
+                if tipo_usuario:
+                    cursor.execute("""
+                        SELECT id, cpf, nome, email, telefone, tipo_usuario, senhaCriptografada
+                        FROM usuario
+                        WHERE id = ? AND tipo_usuario = ?
+                    """, (id, tipo_usuario))
+                else:
+                    cursor.execute("""
+                        SELECT id, cpf, nome, email, telefone, tipo_usuario, senhaCriptografada
+                        FROM usuario
+                        WHERE id = ?
+                    """, (id,))
+                
+                row = cursor.fetchone()
+                if row:
+                    if row['tipo_usuario'] == 'administrador':
+                        from .Administrador import Administrador
+                        return Administrador(row['cpf'], row['nome'], row['email'], row['telefone'], row['senhaCriptografada'], row['id'])
+                    elif row['tipo_usuario'] == 'morador':
+                        from .Morador import Morador
+                        return Morador(row['cpf'], row['nome'], row['email'], row['telefone'], row['senhaCriptografada'], row['id'])
+                return None
+                
+        except Exception:
+            return None
+
+    @staticmethod
+    def existe_algum(tipo_usuario: str) -> bool:
+        try:
+            db_manager = DatabaseManager()
+            resultado = db_manager.executar_query("SELECT 1 FROM usuario WHERE tipo_usuario = ? LIMIT 1", (tipo_usuario,))
+            return len(resultado) > 0
+        except Exception:
+            return False
 
     def to_dict(self) -> dict:
         return {

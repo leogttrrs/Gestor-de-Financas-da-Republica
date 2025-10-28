@@ -10,6 +10,11 @@ from .controlador_ocorrencia import ControladorOcorrencia
 from .controlador_alerta import ControladorAlerta
 from .controlador_quarto import ControladorQuarto
 from .controlador_recorrencia import ControladorRecorrencia
+from src.models.Administrador import Administrador
+from src.models.Morador import Morador
+
+
+
 # from src.views.tela_sistema import TelaSistema 
 
 
@@ -82,13 +87,11 @@ class ControladorSistema:
     
     def fazer_login(self, cpf: str = None, senha: str = None):
         if cpf and senha:
-            from src.models.Administrador import Administrador
             admin = Administrador.buscar_por_cpf(cpf)
             if admin and admin.verificar_senha(senha):
                 self.__usuario_logado = admin
                 return admin
             
-            from src.models.Morador import Morador
             morador = Morador.buscar_por_cpf(cpf)
             if morador and morador.verificar_senha(senha):
                 self.__usuario_logado = morador
@@ -108,7 +111,6 @@ class ControladorSistema:
         if not self.__usuario_logado:
             self.fazer_login()
         else:
-            from src.models.Administrador import Administrador
             if isinstance(self.__usuario_logado, Administrador):
                 self.abre_painel_administrador()
             else:
@@ -131,6 +133,33 @@ class ControladorSistema:
         
         for key, func in lista_opcoes.items():
             print(f"{key}: {func.__doc__}")
+
+    def gerenciar_contratos(self):
+        self.__controlador_contrato.abre_tela()
+
+    def gerenciar_moradores(self):
+        self.__controlador_morador.abre_tela()
+
+    def gerenciar_republica(self):
+        self.__controlador_republica.abre_tela()
+
+    def gerenciar_dividas(self):
+        self.__controlador_divida.abre_tela()
+
+    def gerenciar_pagamentos(self):
+        self.__controlador_pagamento.abre_tela()
+
+    def gerenciar_ocorrencias(self):
+        self.__controlador_ocorrencia.abre_tela()
+
+    def gerenciar_alertas(self):
+        self.__controlador_alerta.abre_tela()
+
+    def gerenciar_quartos(self):
+        self.__controlador_quarto.abre_tela()
+
+    def gerenciar_recorrencias(self):
+        self.__controlador_recorrencia.abre_tela()
 
     def salvar_todos_os_dados(self):
         pass
