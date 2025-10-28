@@ -59,7 +59,7 @@ class ControladorSistema:
         return self.__controlador_divida
 
     @property
-    def controlador_ocorrencia(self):
+    def controlador_ocorrencia(self) -> ControladorOcorrencia:
         return self.__controlador_ocorrencia
     
     @property
