@@ -33,7 +33,6 @@ class TelaOcorrencias:
         titulo_frame.pack(side="left")
 
         TextosPadrao.titulo_principal(titulo_frame, "Ocorrências")
-        TextosPadrao.subtitulo(titulo_frame, "Registre e visualize ocorrências.", cor="#666666")
 
         botoes_frame = tk.Frame(header_frame, bg="white")
         botoes_frame.pack(side="right")
@@ -111,10 +110,14 @@ class TelaOcorrencias:
         for widget in self.linhas_frame.winfo_children():
             widget.destroy()
 
-        if not ocorrencias:
-            tk.Label(self.linhas_frame, text="Nenhuma ocorrência encontrada.", bg="white").pack(pady=10)
+        if not ocorrencias and usuario_logado.tipo_usuario.lower() == "morador":
+            tk.Label(self.linhas_frame, text="Você não possui ocorrências.", bg="white").pack(pady=10)
             return
-
+        
+        elif not ocorrencias and usuario_logado.tipo_usuario.lower() == "administrador":
+            tk.Label(self.linhas_frame, text="Não há ocorrências cadastradas.", bg="white").pack(pady=10)
+            return
+        
         for i, o in enumerate(ocorrencias):
             morador = o.morador.nome if o.morador else "Desconhecido"
             status = o.status if o.status else "Pendente"
