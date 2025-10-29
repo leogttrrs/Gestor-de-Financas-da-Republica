@@ -76,7 +76,7 @@ class TelaFormularioOcorrencia(tk.Toplevel):
                     "titulo": titulo,
                     "descricao": descricao
                 }
-                sucesso, mensagem = self.controlador.salvar_ocorrencia(dados)
+                sucesso, mensagem = self.controlador.cadastrarOcorrencia(dados)
                 if sucesso:
                     messagebox.showinfo("Sucesso", "Ocorrência salva com sucesso!", parent=self)
                 else:

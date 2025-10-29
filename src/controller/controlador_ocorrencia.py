@@ -140,7 +140,7 @@ class ControladorOcorrencia(AbstractControlador):
         except Exception as e:
             self.mostrarMensagemErro(f"Erro ao criar ocorrência: {str(e)}")
 
-    def salvar_ocorrencia(self, dados: dict):
+    def cadastrarOcorrencia(self, dados: dict):
         try:
             valido, msg = self.validarCampos(dados)
             if not valido:
