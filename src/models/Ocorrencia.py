@@ -93,9 +93,18 @@ class Ocorrencia:
         return self
 
 
-    def excluir(self) -> int:
+    def excluir(self) -> bool:
         if self.id is None:
-            return 0
+            return False
+        try:
+            db_manager = DatabaseManager()
+            comando = "DELETE FROM ocorrencia WHERE id = ?"
+            db_manager.executar_comando(comando, (self.id,))
+            return True
+        except Exception as e:
+            print("Erro ao excluir ocorrência:", e)
+            return False
+
     def finalizar(self):
         self.data_fim = date.today()
         self.status = 'Finalizado'

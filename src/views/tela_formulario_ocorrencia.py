@@ -68,9 +68,9 @@ class TelaFormularioOcorrencia(tk.Toplevel):
             sucesso, mensagem = self.controlador.salvar_ocorrencia(dados)
 
             if sucesso:
-                    messagebox.showinfo("Sucesso", "Quarto salvo com sucesso!", parent=self)
+                    messagebox.showinfo("Sucesso", "Ocorrência salva com sucesso!", parent=self)
                     self.destroy()
             else:
-                    messagebox.showerror("Erro", f"Não foi possível salvar o quarto: {mensagem}", parent=self)
+                    messagebox.showerror("Erro", f"Não foi possível salvar a ocorrência: {mensagem}", parent=self)
         except ValueError:
-                messagebox.showerror("Erro de Validação", "Número e Tamanho devem ser valores inteiros.", parent=self)
+                messagebox.showerror("Erro de Validação", "Apresentou erro", parent=self)
