@@ -6,6 +6,7 @@ from .components.textos import TextosPadrao
 from .components.botoes import BotoesPadrao
 from .components.tabelas import TabelasPadrao
 from .components.modais import ModaisPadrao
+from ..models.Ocorrencia import Ocorrencia
 from tkinter import messagebox
 from .tela_formulario_ocorrencia import TelaFormularioOcorrencia
 
@@ -67,11 +68,16 @@ class TelaOcorrencias:
         self.atualizar_lista()
 
     def atualizar_lista(self, ocorrencias: Optional[List] = None):
+        ocorrencias = Ocorrencia.buscar_todos()
         if ocorrencias is None:
             ocorrencias = self._controlador_ocorrencia.listar_ocorrencias()
 
+        # Limpa tabela
         for item in self.tree.get_children():
             self.tree.delete(item)
+
+        usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
+        is_admin = usuario_logado and usuario_logado.tipo_usuario == "administrador"
 
         if not ocorrencias:
             self.tree.insert("", "end", values=("", "Nenhuma ocorrência", "", "", ""))
@@ -79,10 +85,29 @@ class TelaOcorrencias:
 
         for o in ocorrencias:
             morador = o.morador.nome if o.morador else "Desconhecido"
-            self.tree.insert("", "end",
-                             values=(o.id, morador, o.titulo, o.status, "Visualizar"))
+            status = o.status if o.status else "Pendente"
 
+            # Administrador pode visualizar e finalizar
+            if is_admin and status.lower() == "pendente":
+                acao = "Visualizar / Finalizar"
+            else:
+                acao = "Visualizar"
+
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    o.id,
+                    morador,
+                    o.titulo,
+                    status,
+                    acao
+                )
+            )
+
+        self.tree.unbind("<Double-1>")
         self.tree.bind("<Double-1>", self._on_double_click)
+
 
     def _on_double_click(self, event):
         item = self.tree.selection()

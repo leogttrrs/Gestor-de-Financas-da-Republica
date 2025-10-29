@@ -78,7 +78,7 @@ class Ocorrencia:
         self.__descricao = value
     
     def salvar(self) -> 'Ocorrencia':
-        Ocorrencia.criar_tabela_ocorrencia()  # garante que a tabela exista
+        Ocorrencia.criar_tabela_ocorrencia()
         db_manager = DatabaseManager()
         if self.id is None:
             comando = """INSERT INTO ocorrencia (morador_id, titulo, descricao, data, status) 
@@ -105,7 +105,7 @@ class Ocorrencia:
     @staticmethod
     def buscar_todos() -> List['Ocorrencia']:
         db_manager = DatabaseManager()
-        query = "SELECT * FROM ocorrencia ORDER BY data_inicio DESC"
+        query = "SELECT * FROM ocorrencia ORDER BY data DESC"
         resultados = db_manager.executar_query(query)
         return [Ocorrencia.from_db_row(r) for r in resultados]
 

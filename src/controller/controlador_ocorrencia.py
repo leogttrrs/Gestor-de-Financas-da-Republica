@@ -8,7 +8,7 @@ from datetime import datetime
 from tkinter import messagebox
 import tkinter as tk
 from tkinter import messagebox
-
+import sqlite3
 
 
 class ControladorOcorrencia(AbstractControlador):
@@ -120,6 +120,36 @@ class ControladorOcorrencia(AbstractControlador):
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao criar ocorrência: {str(e)}")
+
+    def salvar_ocorrencia(self, dados: dict):
+        try:
+            morador = dados.get("morador")
+            if not morador:
+                return False, "Morador não encontrado!"
+
+            titulo = dados.get("titulo", "").strip()
+            descricao = dados.get("descricao", "").strip()
+
+            if not titulo or not descricao:
+                return False, "Preencha todos os campos obrigatórios!"
+
+            ocorrencia = Ocorrencia(
+                morador=morador,
+                titulo=titulo,
+                descricao=descricao,
+                data=datetime.now().strftime("%d/%m/%Y"),
+                status="Pendente"
+            )
+
+            ocorrencia.salvar()
+            self._atualizar_lista_ocorrencias()
+
+            return True, "Ocorrência cadastrada com sucesso!"
+
+        except Exception as e:
+            return False, f"Erro ao salvar ocorrência: {str(e)}"
+
+
 
     def finalizar_ocorrencia(self, ocorrencia_id: int) -> bool:
         try:

@@ -39,9 +39,6 @@ class TelaFormularioOcorrencia(tk.Toplevel):
         morador_nome = usuario.nome if usuario else ""
         self.morador_var.set(morador_nome)
 
-        ttk.Label(frame, text="Morador:").pack(anchor="w")
-        ttk.Entry(frame, textvariable=self.morador_var, state="readonly").pack(fill="x", pady=(0,10))
-
         ttk.Label(frame, text="Título:").pack(anchor="w")
         ttk.Entry(frame, textvariable=self.titulo_var).pack(fill="x", pady=(0,10))
 
@@ -52,29 +49,28 @@ class TelaFormularioOcorrencia(tk.Toplevel):
         botoes_frame = ttk.Frame(frame)
         botoes_frame.pack(fill="x", side="bottom")
 
-        ttk.Button(botoes_frame, text="Salvar", command=self._salvar).pack(side="right", padx=(0,10))
-        ttk.Button(botoes_frame, text="Cancelar", command=self.destroy).pack(side="right")
+        btn_salvar = ttk.Button(botoes_frame, text="Salvar", command=self._salvar)
+        btn_salvar.pack(side="right", padx=(0,10))
+
+        btn_cancelar = ttk.Button(botoes_frame, text="Cancelar", command=self.destroy)
+        btn_cancelar.pack(side="right", padx=10)
 
     def _salvar(self):
-        usuario = getattr(self.controlador._controlador_sistema, "usuario_logado", None)
-        if not usuario or usuario.tipo_usuario != "morador":
-            messagebox.showerror("Acesso Negado", "Apenas moradores podem acessar este formulário.")
-            self.destroy()
-            return
+        usuario_logado = self.controlador._controlador_sistema.usuario_logado
+        try:
 
-        dados = {
-            "morador_id": self.controlador._controlador_sistema.usuario_logado.id,
-            "titulo": self.titulo_var.get().strip(),
-            "descricao": self.descricao_text.get("1.0", "end").strip()
-        }
+            dados = {
+                "morador": usuario_logado,
+                "titulo": self.titulo_var.get(),
+                "descricao": self.descricao_text.get("1.0", "end")
+            }
 
-        if not dados['titulo']:
-            messagebox.showerror("Erro", "Título é obrigatório.")
-            return
-        if not dados['descricao']:
-            messagebox.showerror("Erro", "Descrição é obrigatória.")
-            return
+            sucesso, mensagem = self.controlador.salvar_ocorrencia(dados)
 
-        self.controlador.criar_ocorrencia_interface(dados)
-
-        self.destroy()
+            if sucesso:
+                    messagebox.showinfo("Sucesso", "Quarto salvo com sucesso!", parent=self)
+                    self.destroy()
+            else:
+                    messagebox.showerror("Erro", f"Não foi possível salvar o quarto: {mensagem}", parent=self)
+        except ValueError:
+                messagebox.showerror("Erro de Validação", "Número e Tamanho devem ser valores inteiros.", parent=self)
