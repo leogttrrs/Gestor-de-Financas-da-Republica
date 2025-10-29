@@ -58,19 +58,36 @@ class TelaFormularioOcorrencia(tk.Toplevel):
     def _salvar(self):
         usuario_logado = self.controlador._controlador_sistema.usuario_logado
         try:
+            titulo = self.titulo_var.get().strip()
+            descricao = self.descricao_text.get("1.0", "end").strip()
 
-            dados = {
-                "morador": usuario_logado,
-                "titulo": self.titulo_var.get(),
-                "descricao": self.descricao_text.get("1.0", "end")
-            }
+            if not titulo or not descricao:
+                messagebox.showerror("Erro de Validação", "Preencha todos os campos obrigatórios!", parent=self)
+                return
 
-            sucesso, mensagem = self.controlador.salvar_ocorrencia(dados)
-
-            if sucesso:
-                    messagebox.showinfo("Sucesso", "Ocorrência salva com sucesso!", parent=self)
-                    self.destroy()
+            if self.ocorrencia_existente:
+                self.ocorrencia_existente.titulo = titulo
+                self.ocorrencia_existente.descricao = descricao
+                self.ocorrencia_existente.salvar()
+                messagebox.showinfo("Sucesso", "Ocorrência atualizada com sucesso!", parent=self)
             else:
+                dados = {
+                    "morador": usuario_logado,
+                    "titulo": titulo,
+                    "descricao": descricao
+                }
+                sucesso, mensagem = self.controlador.salvar_ocorrencia(dados)
+                if sucesso:
+                    messagebox.showinfo("Sucesso", "Ocorrência salva com sucesso!", parent=self)
+                else:
                     messagebox.showerror("Erro", f"Não foi possível salvar a ocorrência: {mensagem}", parent=self)
+
+            if self.controlador._tela_ocorrencia:
+                self.controlador._tela_ocorrencia.atualizar_lista()
+
+            self.destroy()
+
         except ValueError:
-                messagebox.showerror("Erro de Validação", "Apresentou erro", parent=self)
+            messagebox.showerror("Erro de Validação", "Apresentou erro", parent=self)
+
+

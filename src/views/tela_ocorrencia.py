@@ -209,7 +209,12 @@ class TelaOcorrencias:
         modal.destroy()
 
     def _abrir_formulario_editar(self, ocorrencia):
-        TelaFormularioOcorrencia(parent=self.main_frame, controlador_ocorrencia=self._controlador_ocorrencia, ocorrencia=ocorrencia).grab_set()
+        TelaFormularioOcorrencia(
+            parent=self.main_frame,
+            controlador_ocorrencia=self._controlador_ocorrencia,
+            ocorrencia_existente=ocorrencia
+        ).grab_set()
+
 
     
     def _excluir_ocorrencia(self, modal, ocorrencia):
