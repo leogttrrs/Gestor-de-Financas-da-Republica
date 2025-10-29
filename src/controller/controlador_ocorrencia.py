@@ -7,14 +7,37 @@ from src.views.tela_formulario_ocorrencia import TelaFormularioOcorrencia
 from datetime import datetime
 from tkinter import messagebox
 import tkinter as tk
-from tkinter import messagebox
-import sqlite3
 
 
 class ControladorOcorrencia(AbstractControlador):
     def __init__(self, controlador_sistema):
         super().__init__(controlador_sistema)
         self._tela_ocorrencia = None
+
+    def mostrarMensagemErro(self, msg: str):
+        """Mostra mensagem de erro padronizada."""
+        if self._tela_ocorrencia:
+            self._tela_ocorrencia.mostrar_erro(msg)
+        else:
+            messagebox.showerror("Erro", msg)
+
+    def validarCampos(self, dados: dict) -> (bool, str):
+        """Valida campos obrigatórios de uma ocorrência."""
+        if not dados:
+            return False, "Dados inválidos"
+
+        if 'morador' not in dados:
+            if not dados.get('morador_id'):
+                return False, "Campo 'morador_id' é obrigatório"
+
+        if not dados.get('titulo') or str(dados.get('titulo')).strip() == "":
+            return False, "Campo 'titulo' é obrigatório"
+        
+        if not dados.get('descricao') or str(dados.get('descricao')).strip() == "":
+            return False, "Campo 'descricao' é obrigatório"
+
+        return True, ""
+
 
     def abre_tela(self, parent_view=None):
         if parent_view is None:
@@ -30,7 +53,6 @@ class ControladorOcorrencia(AbstractControlador):
             return None
         tipo = usuario.get("tipo_usuario", "").lower()
         if tipo in ("adm", "administrador"):
-            # Administrador não pode criar ocorrência
             return {"tipo": "administrador", **usuario}
         elif tipo == "morador":
             return {"tipo": "morador", **usuario}
@@ -39,7 +61,7 @@ class ControladorOcorrencia(AbstractControlador):
     def abrir_tela_formulario(self, ocorrencia_existente=None):
         usuario_logado = self._controlador_sistema.usuario_logado
         if not usuario_logado or usuario_logado.tipo_usuario != 'morador':
-            messagebox.showerror("Acesso Negado", "Apenas moradores podem criar ocorrencias.")
+            self.mostrarMensagemErro("Acesso negado: apenas moradores podem criar ocorrências.")
             return
 
         parent = None
@@ -49,7 +71,6 @@ class ControladorOcorrencia(AbstractControlador):
             parent = tk.Tk() 
 
         TelaFormularioOcorrencia(parent, self, ocorrencia_existente)
-
 
     def listar_ocorrencias(self) -> List[Ocorrencia]:
         try:
@@ -76,15 +97,14 @@ class ControladorOcorrencia(AbstractControlador):
 
         self._tela_ocorrencia.exibir_ocorrencias(ocorrencias_dict)
 
-
     def criar_ocorrencia_interface(self, dados: dict, formulario: Optional[tk.Toplevel] = None):
         if not self._tela_ocorrencia:
             return
 
         try:
-            campos_obrigatorios = ('morador_id', 'titulo', 'descricao')
-            if not dados or any(not dados.get(campo) for campo in campos_obrigatorios):
-                messagebox.showerror("Erro", "Preencha todos os campos!")
+            valido, msg = self.validarCampos(dados)
+            if not valido:
+                self.mostrarMensagemErro(msg)
                 return
 
             morador_id = int(dados.get('morador_id'))
@@ -93,7 +113,7 @@ class ControladorOcorrencia(AbstractControlador):
 
             morador = Morador.buscar_por_id(morador_id)
             if not morador:
-                messagebox.showerror("Erro", "Morador não encontrado!")
+                self.mostrarMensagemErro("Morador não encontrado!")
                 return
 
             ocorr = Ocorrencia(
@@ -106,11 +126,10 @@ class ControladorOcorrencia(AbstractControlador):
 
             valido, msg = ocorr.validar_campos()
             if not valido:
-                messagebox.showerror("Erro", msg)
+                self.mostrarMensagemErro(msg)
                 return
 
             ocorr.salvar()
-
             self._atualizar_lista_ocorrencias()
             
             if formulario:
@@ -119,19 +138,20 @@ class ControladorOcorrencia(AbstractControlador):
             messagebox.showinfo("Sucesso", "Ocorrência cadastrada com sucesso!")
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao criar ocorrência: {str(e)}")
+            self.mostrarMensagemErro(f"Erro ao criar ocorrência: {str(e)}")
 
     def salvar_ocorrencia(self, dados: dict):
         try:
+            valido, msg = self.validarCampos(dados)
+            if not valido:
+                return False, msg
+
             morador = dados.get("morador")
             if not morador:
                 return False, "Morador não encontrado!"
 
             titulo = dados.get("titulo", "").strip()
             descricao = dados.get("descricao", "").strip()
-
-            if not titulo or not descricao:
-                return False, "Preencha todos os campos obrigatórios!"
 
             ocorrencia = Ocorrencia(
                 morador=morador,
@@ -143,37 +163,33 @@ class ControladorOcorrencia(AbstractControlador):
 
             ocorrencia.salvar()
             self._atualizar_lista_ocorrencias()
-
             return True, "Ocorrência cadastrada com sucesso!"
 
         except Exception as e:
             return False, f"Erro ao salvar ocorrência: {str(e)}"
 
-
-
     def finalizar_ocorrencia(self, ocorrencia_id: int) -> bool:
         try:
             ocorr = Ocorrencia.buscar_por_id(ocorrencia_id)
             if not ocorr:
-                self._tela_ocorrencia.mostrar_erro("Ocorrência não encontrada!")
+                self.mostrarMensagemErro("Ocorrência não encontrada!")
                 return False
 
             ocorr.status = "Finalizado"
             ocorr.salvar()
-
             self._atualizar_lista_ocorrencias()
             self._tela_ocorrencia.mostrar_sucesso("Ocorrência finalizada!")
             return True
 
         except Exception as e:
-            self._tela_ocorrencia.mostrar_erro(f"Erro ao finalizar: {str(e)}")
+            self.mostrarMensagemErro(f"Erro ao finalizar: {str(e)}")
             return False
 
     def excluir_ocorrencia(self, ocorrencia_id: int) -> bool:
         try:
             ocorr = Ocorrencia.buscar_por_id(ocorrencia_id)
             if not ocorr:
-                self._tela_ocorrencia.mostrar_erro("Ocorrência não encontrada!")
+                self.mostrarMensagemErro("Ocorrência não encontrada!")
                 return False
 
             ocorr.excluir()
@@ -181,7 +197,7 @@ class ControladorOcorrencia(AbstractControlador):
             return True
 
         except Exception as e:
-            self._tela_ocorrencia.mostrar_erro(f"Erro ao excluir: {str(e)}")
+            self.mostrarMensagemErro(f"Erro ao excluir: {str(e)}")
             return False
 
     def listar_moradores(self) -> List[Dict]:
@@ -195,7 +211,7 @@ class ControladorOcorrencia(AbstractControlador):
         try:
             ocorrencia = Ocorrencia.buscar_por_id(id_ocorrencia)
             if not ocorrencia:
-                messagebox.showerror("Erro", "Ocorrência não encontrada.")
+                self.mostrarMensagemErro("Ocorrência não encontrada.")
                 return False
 
             ocorrencia.status = novo_status
@@ -208,7 +224,5 @@ class ControladorOcorrencia(AbstractControlador):
             return True
 
         except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível alterar o status: {e}")
+            self.mostrarMensagemErro(f"Não foi possível alterar o status: {e}")
             return False
-
-
