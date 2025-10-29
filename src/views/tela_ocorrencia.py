@@ -146,62 +146,95 @@ class TelaOcorrencias:
         modal.geometry("600x400")
         modal.transient(self.main_frame)
         modal.grab_set()
+        modal.configure(bg="#f5f5f5")
 
-        body = tk.Frame(modal, bg="white")
-        body.pack(fill="both", expand=True, padx=30, pady=10)
+        card = tk.Frame(modal, bg="white", relief="solid", bd=1)
+        card.pack(padx=30, pady=30, fill="both", expand=True)
 
-        tk.Label(body, text="Morador", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
-        tk.Label(body, text=ocorrencia.morador.nome, bg="white").pack(anchor="w", pady=(0, 6))
+        header = tk.Frame(card, bg="white")
+        header.pack(fill="x", padx=20, pady=(20, 5))
 
-        tk.Label(body, text="Título", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
-        tk.Label(body, text=ocorrencia.titulo, bg="white").pack(anchor="w", pady=(0, 6))
+        tk.Label(
+            header, text=ocorrencia.titulo,
+            bg="white", font=("Arial", 12, "bold"), anchor="w"
+        ).pack(anchor="w")
 
-        tk.Label(body, text="Descrição", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
-        descricao_box = tk.Text(body, height=6, wrap="word")
-        descricao_box.insert("1.0", ocorrencia.descricao)
-        descricao_box.configure(state="disabled")
-        descricao_box.pack(fill="both", expand=False, pady=(0, 6))
+        autor_data = f"{ocorrencia.morador.nome if ocorrencia.morador else 'Desconhecido'} - {ocorrencia.data.strftime('%d/%m/%Y') if hasattr(ocorrencia, 'data') else ''}"
+        tk.Label(
+            header, text=autor_data,
+            bg="white", fg="#666666", font=("Arial", 10)
+        ).pack(anchor="w")
 
-        tk.Label(body, text="Status atual:", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
-        tk.Label(body, text=ocorrencia.status, bg="white", fg="#333").pack(anchor="w", pady=(0, 10))
+        tk.Frame(card, height=1, bg="#e5e5e5").pack(fill="x", padx=20, pady=(5, 10))
 
-        botoes_frame = tk.Frame(modal, bg="white")
-        botoes_frame.pack(side="bottom", fill="x", padx=30, pady=20)
+        descricao_frame = tk.Frame(card, bg="#f8f9fa")
+        descricao_frame.pack(fill="both", padx=20, pady=(0, 10))
 
-        ttk.Button(botoes_frame, text="Fechar", command=modal.destroy).pack(side="left")
+        descricao_text = tk.Label(
+            descricao_frame,
+            text=ocorrencia.descricao,
+            bg="#f8f9fa",
+            justify="left",
+            wraplength=520,
+            font=("Arial", 10)
+        )
+        descricao_text.pack(fill="both", expand=True, padx=10, pady=10)
+
+        rodape_info = tk.Frame(card, bg="white")
+        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
+        tk.Label(
+            rodape_info,
+            text=f"Status atual: {ocorrencia.status}",
+            bg="white",
+            fg="#444",
+            font=("Arial", 10, "italic")
+        ).pack(anchor="w")
+
+        # ====== RODAPÉ DE BOTÕES ======
+        botoes_frame = tk.Frame(card, bg="white")
+        botoes_frame.pack(side="bottom", fill="x", padx=20, pady=20)
+
+        def criar_botao(texto, cor, comando):
+            return tk.Button(
+                botoes_frame,
+                text=texto,
+                bg=cor,
+                fg="white",
+                font=("Arial", 10, "bold"),
+                relief="flat",
+                activebackground=cor,
+                activeforeground="white",
+                padx=15,
+                pady=6,
+                cursor="hand2",
+                command=comando
+            )
+
+        tk.Button(
+            botoes_frame, text="Fechar",
+            bg="#6c757d", fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat", padx=15, pady=6,
+            command=modal.destroy
+        ).pack(side="left", padx=5)
 
         if usuario_logado and usuario_logado.tipo_usuario.lower() == "morador":
-            ttk.Button(
-                botoes_frame, text="Editar",
-                command=lambda: self._abrir_formulario_editar(ocorrencia)
-            ).pack(side="right", padx=5)
-            ttk.Button(
-                botoes_frame, text="Excluir",
-                command=lambda: self._excluir_ocorrencia(modal, ocorrencia)
-            ).pack(side="right", padx=5)
+            criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
+            criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
 
         elif usuario_logado and usuario_logado.tipo_usuario.lower() == "administrador":
-            # alterna botão conforme status atual
-            if ocorrencia.status == "Pendente":
-                ttk.Button(
-                    botoes_frame,
-                    text="Marcar como Finalizado",
-                    command=lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Finalizado")
-                ).pack(side="right", padx=5)
-            elif ocorrencia.status == "Finalizado":
-                ttk.Button(
-                    botoes_frame,
-                    text="Marcar como Pendente",
-                    command=lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")
-                ).pack(side="right", padx=5)
+            criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
+            criar_botao("Gerar Alerta", "#ffc107", lambda: self._abrir_modal_alerta()).pack(side="right", padx=5)
 
-            ttk.Button(
-                botoes_frame,
-                text="Gerar Alerta",
-                command=lambda: self._abrir_modal_alerta()
-            ).pack(side="right", padx=5)
+            if ocorrencia.status == "Pendente":
+                criar_botao("Marcar como Finalizado", "#198754",
+                            lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Finalizado")).pack(side="right", padx=5)
+            elif ocorrencia.status == "Finalizado":
+                criar_botao("Marcar como Pendente", "#198754",
+                            lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")).pack(side="right", padx=5)
 
         modal.update()
+
 
 
     def _finalizar_ocorrencia(self, modal, ocorrencia):
