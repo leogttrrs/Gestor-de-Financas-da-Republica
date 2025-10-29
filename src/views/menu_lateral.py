@@ -130,9 +130,7 @@ class MenuMorador(MenuLateral):
             opcoes = [
                 ("🏠 Visão Geral", lambda: self._navegar("dashboard")),
                 ("👥 Moradores", lambda: self._navegar("moradores")),
-                ("🏠 República", lambda: self._navegar("republica")),
                 ("🛏 Quartos", lambda: self._navegar("quartos")),
-                ("📋 Contratos", lambda: self._navegar("contratos")),
                 ("💰 Dívidas", lambda: self._navegar("dividas")),
                 ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
                 ("🔔 Alertas", lambda: self._navegar("alertas")),
