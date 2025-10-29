@@ -163,38 +163,46 @@ class TelaOcorrencias:
         descricao_box.pack(fill="both", expand=False, pady=(0, 6))
 
         tk.Label(body, text="Status atual:", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
-        tk.Label(body, text=ocorrencia.status, bg="white").pack(anchor="w", pady=(0, 6))
+        tk.Label(body, text=ocorrencia.status, bg="white", fg="#333").pack(anchor="w", pady=(0, 10))
 
         botoes_frame = tk.Frame(modal, bg="white")
         botoes_frame.pack(side="bottom", fill="x", padx=30, pady=20)
 
         ttk.Button(botoes_frame, text="Fechar", command=modal.destroy).pack(side="left")
 
-        # BOTÕES CONDICIONAIS
-        if usuario_logado:
-            tipo = usuario_logado.tipo_usuario.lower()
+        if usuario_logado and usuario_logado.tipo_usuario.lower() == "morador":
+            ttk.Button(
+                botoes_frame, text="Editar",
+                command=lambda: self._abrir_formulario_editar(ocorrencia)
+            ).pack(side="right", padx=5)
+            ttk.Button(
+                botoes_frame, text="Excluir",
+                command=lambda: self._excluir_ocorrencia(modal, ocorrencia)
+            ).pack(side="right", padx=5)
 
-            if tipo == "morador" and usuario_logado.cpf == ocorrencia.morador.cpf:
-                ttk.Button(botoes_frame, text="Editar",
-                           command=lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
-                ttk.Button(botoes_frame, text="Excluir",
-                           command=lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
-
-            elif tipo == "administrador":
-                if ocorrencia.status.lower() == "pendente":
-                    ttk.Button(
-                        botoes_frame,
-                        text="Marcar como Finalizado",
-                        command=lambda: self._finalizar_ocorrencia(modal, ocorrencia)
-                    ).pack(side="right", padx=5)
-
+        elif usuario_logado and usuario_logado.tipo_usuario.lower() == "administrador":
+            # alterna botão conforme status atual
+            if ocorrencia.status == "Pendente":
                 ttk.Button(
                     botoes_frame,
-                    text="Gerar Alerta",
-                    command=self._gerar_alerta
+                    text="Marcar como Finalizado",
+                    command=lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Finalizado")
+                ).pack(side="right", padx=5)
+            elif ocorrencia.status == "Finalizado":
+                ttk.Button(
+                    botoes_frame,
+                    text="Marcar como Pendente",
+                    command=lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")
                 ).pack(side="right", padx=5)
 
+            ttk.Button(
+                botoes_frame,
+                text="Gerar Alerta",
+                command=lambda: self._abrir_modal_alerta()
+            ).pack(side="right", padx=5)
+
         modal.update()
+
 
     def _finalizar_ocorrencia(self, modal, ocorrencia):
         """Altera o status de 'Pendente' para 'Finalizado'."""
@@ -258,3 +266,22 @@ class TelaOcorrencias:
             messagebox.showerror("Erro", "Não foi possível excluir a ocorrência.")
         modal.destroy()
         self.atualizar_lista()
+
+    def _alterar_status_ocorrencia(self, modal, ocorrencia, novo_status):
+        sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, novo_status)
+        if sucesso:
+            modal.destroy()
+            self.atualizar_lista()
+
+    def _abrir_modal_alerta(self):
+        alerta = tk.Toplevel(self.main_frame)
+        alerta.title("Gerar Alerta")
+        alerta.geometry("300x150")
+        alerta.transient(self.main_frame)
+        alerta.grab_set()
+
+        frame = tk.Frame(alerta, bg="white")
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(frame, text="Em desenvolvimento...", bg="white", font=("Arial", 11)).pack(expand=True)
+        ttk.Button(frame, text="Fechar", command=alerta.destroy).pack(pady=10)
