@@ -16,7 +16,7 @@ class Ocorrencia:
         self.__titulo = titulo
         self.__descricao = descricao
         self.__status = status
-        self.__data = data
+        self.__data = data or datetime.now().strftime("%Y-%m-%d")
 
     @classmethod
     def from_db_row(cls, row: dict) -> 'Ocorrencia':
@@ -76,6 +76,15 @@ class Ocorrencia:
     @descricao.setter
     def descricao(self, value: str):
         self.__descricao = value
+
+    @property
+    def data(self) -> str:
+        return self.__data
+
+    @data.setter
+    def data(self, value: str):
+        self.__data = value
+
     
     def salvar(self) -> 'Ocorrencia':
         Ocorrencia.criar_tabela_ocorrencia()

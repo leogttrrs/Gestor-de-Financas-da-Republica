@@ -159,7 +159,13 @@ class TelaOcorrencias:
             bg="white", font=("Arial", 12, "bold"), anchor="w"
         ).pack(anchor="w")
 
-        autor_data = f"{ocorrencia.morador.nome if ocorrencia.morador else 'Desconhecido'} - {ocorrencia.data.strftime('%d/%m/%Y') if hasattr(ocorrencia, 'data') else ''}"
+        try:
+            from datetime import datetime
+            data_formatada = datetime.strptime(str(ocorrencia.data), "%Y-%m-%d").strftime("%d/%m/%Y")
+        except Exception:
+            data_formatada = str(ocorrencia.data)
+
+        autor_data = f"{ocorrencia.morador.nome if ocorrencia.morador else 'Desconhecido'} - {data_formatada}"
         tk.Label(
             header, text=autor_data,
             bg="white", fg="#666666", font=("Arial", 10)
@@ -190,7 +196,6 @@ class TelaOcorrencias:
             font=("Arial", 10, "italic")
         ).pack(anchor="w")
 
-        # ====== RODAPÉ DE BOTÕES ======
         botoes_frame = tk.Frame(card, bg="white")
         botoes_frame.pack(side="bottom", fill="x", padx=20, pady=20)
 
