@@ -143,7 +143,7 @@ class TelaOcorrencias:
 
         modal = tk.Toplevel(self.main_frame)
         modal.title("Visualizar Ocorrência")
-        modal.geometry("600x360")
+        modal.geometry("600x400")
         modal.transient(self.main_frame)
         modal.grab_set()
 
@@ -162,22 +162,71 @@ class TelaOcorrencias:
         descricao_box.configure(state="disabled")
         descricao_box.pack(fill="both", expand=False, pady=(0, 6))
 
+        tk.Label(body, text="Status atual:", bg="white", font=("Arial", 10, "bold")).pack(anchor="w")
+        tk.Label(body, text=ocorrencia.status, bg="white").pack(anchor="w", pady=(0, 6))
+
         botoes_frame = tk.Frame(modal, bg="white")
         botoes_frame.pack(side="bottom", fill="x", padx=30, pady=20)
 
         ttk.Button(botoes_frame, text="Fechar", command=modal.destroy).pack(side="left")
 
+        # BOTÕES CONDICIONAIS
         if usuario_logado:
-            if usuario_logado.tipo_usuario.lower() == "administrador" or (
-                usuario_logado.tipo_usuario.lower() == "morador"
-                and usuario_logado.cpf == ocorrencia.morador.cpf
-            ):
+            tipo = usuario_logado.tipo_usuario.lower()
+
+            if tipo == "morador" and usuario_logado.cpf == ocorrencia.morador.cpf:
                 ttk.Button(botoes_frame, text="Editar",
                            command=lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
                 ttk.Button(botoes_frame, text="Excluir",
                            command=lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
 
+            elif tipo == "administrador":
+                if ocorrencia.status.lower() == "pendente":
+                    ttk.Button(
+                        botoes_frame,
+                        text="Marcar como Finalizado",
+                        command=lambda: self._finalizar_ocorrencia(modal, ocorrencia)
+                    ).pack(side="right", padx=5)
+
+                ttk.Button(
+                    botoes_frame,
+                    text="Gerar Alerta",
+                    command=self._gerar_alerta
+                ).pack(side="right", padx=5)
+
         modal.update()
+
+    def _finalizar_ocorrencia(self, modal, ocorrencia):
+        """Altera o status de 'Pendente' para 'Finalizado'."""
+        confirm = messagebox.askyesno("Confirmar", "Deseja marcar esta ocorrência como finalizada?")
+        if not confirm:
+            return
+
+        sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, "Finalizado")
+
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Ocorrência marcada como finalizada!")
+            modal.destroy()
+            self.atualizar_lista()
+        else:
+            messagebox.showerror("Erro", "Não foi possível atualizar o status da ocorrência.")
+
+    def _gerar_alerta(self):
+        """Exibe um modal informando que está em desenvolvimento."""
+        alerta_modal = tk.Toplevel(self.main_frame)
+        alerta_modal.title("Gerar Alerta")
+        alerta_modal.geometry("300x150")
+        alerta_modal.transient(self.main_frame)
+        alerta_modal.grab_set()
+
+        tk.Label(
+            alerta_modal,
+            text="Em desenvolvimento...",
+            bg="white",
+            font=("Arial", 11, "italic")
+        ).pack(expand=True, fill="both", padx=20, pady=40)
+
+        ttk.Button(alerta_modal, text="Fechar", command=alerta_modal.destroy).pack(pady=10)
 
     def _abrir_formulario(self):
         TelaFormularioOcorrencia(parent=self.main_frame, controlador_ocorrencia=self._controlador_ocorrencia).grab_set()

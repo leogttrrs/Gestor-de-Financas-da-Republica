@@ -190,4 +190,25 @@ class ControladorOcorrencia(AbstractControlador):
             return [{'id': m.id, 'nome': m.nome} for m in moradores]
         except Exception:
             return []
+        
+    def alterar_status_ocorrencia(self, id_ocorrencia: int, novo_status: str) -> bool:
+        try:
+            ocorrencia = Ocorrencia.buscar_por_id(id_ocorrencia)
+            if not ocorrencia:
+                messagebox.showerror("Erro", "Ocorrência não encontrada.")
+                return False
+
+            ocorrencia.status = novo_status
+            ocorrencia.salvar()
+
+            if hasattr(self, "_tela_ocorrencia") and self._tela_ocorrencia:
+                self._atualizar_lista_ocorrencias()
+
+            messagebox.showinfo("Sucesso", f"Ocorrência marcada como {novo_status}.")
+            return True
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível alterar o status: {e}")
+            return False
+
 
