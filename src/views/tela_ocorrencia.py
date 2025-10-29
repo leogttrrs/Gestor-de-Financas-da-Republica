@@ -366,14 +366,63 @@ class TelaOcorrencias:
             ocorrencia_existente=ocorrencia
         ).grab_set()
 
-    def _excluir_ocorrencia(self, modal, ocorrencia):
-        sucesso = self._controlador_ocorrencia.excluir_ocorrencia(ocorrencia.id)
-        if sucesso:
-            messagebox.showinfo("Resultado", "Ocorrência excluída com sucesso!")
-        else:
-            messagebox.showerror("Erro", "Não foi possível excluir a ocorrência.")
-        modal.destroy()
-        self.atualizar_lista()
+    def _excluir_ocorrencia(self, modal_visualizar, ocorrencia):
+        """Exibe um modal de confirmação antes de excluir a ocorrência."""
+        def confirmar_exclusao():
+            sucesso = self._controlador_ocorrencia.excluir_ocorrencia(ocorrencia.id)
+            if sucesso:
+                messagebox.showinfo("Resultado", "Ocorrência excluída com sucesso!")
+            else:
+                messagebox.showerror("Erro", "Não foi possível excluir a ocorrência.")
+            confirm_modal.destroy()
+            modal_visualizar.destroy()
+            self.atualizar_lista()
+
+        confirm_modal = tk.Toplevel(self.main_frame)
+        confirm_modal.title("Confirmação")
+        confirm_modal.geometry("350x150")
+        confirm_modal.transient(self.main_frame)
+        confirm_modal.grab_set()
+        confirm_modal.configure(bg="white")
+
+        tk.Label(
+            confirm_modal,
+            text="Deseja realmente excluir esta ocorrência?",
+            bg="white",
+            font=("Arial", 11),
+            wraplength=300,
+            justify="center"
+        ).pack(expand=True, fill="both", padx=20, pady=20)
+
+        botoes_frame = tk.Frame(confirm_modal, bg="white")
+        botoes_frame.pack(pady=10)
+
+        tk.Button(
+            botoes_frame,
+            text="Não",
+            bg="#6c757d",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=confirm_modal.destroy
+        ).pack(side="left", padx=10)
+
+        tk.Button(
+            botoes_frame,
+            text="Sim",
+            bg="#198754",
+            fg="white",
+            font=("Arial", 10, "bold"),
+            relief="flat",
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=confirmar_exclusao
+        ).pack(side="right", padx=10)
+
 
     def _alterar_status_ocorrencia(self, modal, ocorrencia, novo_status):
         sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, novo_status)
