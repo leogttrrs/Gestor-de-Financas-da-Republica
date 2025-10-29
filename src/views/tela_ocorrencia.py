@@ -1,4 +1,3 @@
-# tela_ocorrencias.py
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import List, Optional
@@ -155,8 +154,11 @@ class TelaOcorrencias:
         header.pack(fill="x", padx=20, pady=(20, 5))
 
         tk.Label(
-            header, text=ocorrencia.titulo,
-            bg="white", font=("Arial", 12, "bold"), anchor="w"
+            header,
+            text=ocorrencia.titulo,
+            bg="white",
+            font=("Arial", 12, "bold"),
+            anchor="w"
         ).pack(anchor="w")
 
         try:
@@ -167,34 +169,14 @@ class TelaOcorrencias:
 
         autor_data = f"{ocorrencia.morador.nome if ocorrencia.morador else 'Desconhecido'} - {data_formatada}"
         tk.Label(
-            header, text=autor_data,
-            bg="white", fg="#666666", font=("Arial", 10)
+            header,
+            text=autor_data,
+            bg="white",
+            fg="#666666",
+            font=("Arial", 10)
         ).pack(anchor="w")
 
         tk.Frame(card, height=1, bg="#e5e5e5").pack(fill="x", padx=20, pady=(5, 10))
-
-        descricao_frame = tk.Frame(card, bg="#f8f9fa")
-        descricao_frame.pack(fill="both", padx=20, pady=(0, 10))
-
-        descricao_text = tk.Label(
-            descricao_frame,
-            text=ocorrencia.descricao,
-            bg="#f8f9fa",
-            justify="left",
-            wraplength=520,
-            font=("Arial", 10)
-        )
-        descricao_text.pack(fill="both", expand=True, padx=10, pady=10)
-
-        rodape_info = tk.Frame(card, bg="white")
-        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
-        tk.Label(
-            rodape_info,
-            text=f"Status atual: {ocorrencia.status}",
-            bg="white",
-            fg="#444",
-            font=("Arial", 10, "italic")
-        ).pack(anchor="w")
 
         botoes_frame = tk.Frame(card, bg="white")
         botoes_frame.pack(side="bottom", fill="x", padx=20, pady=20)
@@ -216,10 +198,14 @@ class TelaOcorrencias:
             )
 
         tk.Button(
-            botoes_frame, text="Fechar",
-            bg="#6c757d", fg="white",
+            botoes_frame,
+            text="Fechar",
+            bg="#6c757d",
+            fg="white",
             font=("Arial", 10, "bold"),
-            relief="flat", padx=15, pady=6,
+            relief="flat",
+            padx=15,
+            pady=6,
             command=modal.destroy
         ).pack(side="left", padx=5)
 
@@ -238,9 +224,110 @@ class TelaOcorrencias:
                 criar_botao("Marcar como Pendente", "#198754",
                             lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")).pack(side="right", padx=5)
 
+        rodape_info = tk.Frame(card, bg="white")
+        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
+        tk.Label(
+            rodape_info,
+            text=f"Status atual: {ocorrencia.status}",
+            bg="white",
+            fg="#444",
+            font=("Arial", 10, "italic")
+        ).pack(anchor="w")
+
+        from tkinter import font as tkfont
+        import math
+
+        descr_text = str(ocorrencia.descricao or "")
+        wrap_pixels = 520
+        fonte = tkfont.Font(family="Arial", size=10)
+        linha_altura = fonte.metrics("linespace")
+
+        def estimate_visual_lines(text, font_obj, wrap_px):
+            total_lines = 0
+            avg_char_width = max(1, font_obj.measure("abcdefghijklmnopqrstuvwxyz") / 26.0)
+
+            for original_line in text.splitlines() or [""]:
+                line = original_line
+                words = line.split(" ")
+                cur_width = 0
+                cur_line_count = 1
+                for word in words:
+                    word_w = font_obj.measure(word + " ")
+                    if word_w > wrap_px:
+                        chars_per_line = max(1, int(wrap_px / avg_char_width))
+                        # se houver parte acumulada na linha atual, conta essa linha e reinicia
+                        if cur_width > 0:
+                            cur_line_count += 1
+                            cur_width = 0
+                        # número de linhas geradas pela palavra longa
+                        needed = math.ceil(len(word) / chars_per_line)
+                        cur_line_count += (needed - 1)  # já contamos uma linha para começar
+                        # após palavra longa, cur_width = medida do resto (0)
+                        cur_width = 0
+                    else:
+                        if cur_width + word_w <= wrap_px:
+                            cur_width += word_w
+                        else:
+                            # quebra de linha
+                            cur_line_count += 1
+                            cur_width = word_w
+                total_lines += cur_line_count
+            return total_lines
+
+        num_visual_lines = estimate_visual_lines(descr_text, fonte, wrap_pixels)
+
+        MAX_VISIBLE_LINES = 5
+
+        if num_visual_lines > MAX_VISIBLE_LINES:
+
+            scroll_container = tk.Frame(card, bg="#f8f9fa")
+            scroll_container.pack(fill="both", expand=False, padx=20, pady=(0, 10))
+
+            canvas = tk.Canvas(scroll_container, bg="#f8f9fa", highlightthickness=0)
+            canvas.pack(side="left", fill="both", expand=True)
+
+            scrollbar = tk.Scrollbar(scroll_container, orient="vertical", command=canvas.yview)
+            scrollbar.pack(side="right", fill="y")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            inner_frame = tk.Frame(canvas, bg="#f8f9fa")
+            window_id = canvas.create_window((0, 0), window=inner_frame, anchor="nw")
+
+            def _on_configure_inner(event):
+                canvas.configure(scrollregion=canvas.bbox("all"))
+            inner_frame.bind("<Configure>", _on_configure_inner)
+
+            def _on_canvas_configure(event):
+                canvas.itemconfig(window_id, width=event.width)
+            canvas.bind("<Configure>", _on_canvas_configure)
+
+            descricao_label = tk.Label(
+                inner_frame,
+                text=descr_text,
+                bg="#f8f9fa",
+                justify="left",
+                anchor="nw",
+                wraplength=wrap_pixels,
+                font=("Arial", 10)
+            )
+            descricao_label.pack(fill="x", padx=10, pady=10, anchor="w")
+
+            canvas.config(height=linha_altura * MAX_VISIBLE_LINES + 20)
+        else:
+            descricao_frame = tk.Frame(card, bg="#f8f9fa")
+            descricao_frame.pack(fill="x", padx=20, pady=(0, 10))
+            descricao_label = tk.Label(
+                descricao_frame,
+                text=descr_text,
+                bg="#f8f9fa",
+                justify="left",
+                anchor="nw",
+                wraplength=wrap_pixels,
+                font=("Arial", 10)
+            )
+            descricao_label.pack(fill="x", padx=10, pady=10, anchor="w")
+
         modal.update()
-
-
 
     def _finalizar_ocorrencia(self, modal, ocorrencia):
         """Altera o status de 'Pendente' para 'Finalizado'."""
