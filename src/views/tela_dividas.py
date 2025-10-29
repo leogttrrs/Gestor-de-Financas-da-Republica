@@ -33,9 +33,12 @@ class TelaDividas(ComponenteBase):
         style.configure("Editar.TButton", foreground="white", background="#007bff", borderwidth=0, font=('Arial', 9))
         style.configure("Excluir.TButton", foreground="white", background="#dc3545", borderwidth=0, font=('Arial', 9))
         style.configure("Salvar.TButton", foreground="white", background="#28a745", borderwidth=0, font=('Arial', 9))
+        style.configure("Solicitado.TButton", foreground="black", background="#ffc107", borderwidth=0, font=('Arial', 9))
+
         style.map("Editar.TButton", background=[('active', '#0069d9')])
         style.map("Excluir.TButton", background=[('active', '#c82333')])
         style.map("Salvar.TButton", background=[('active', '#218838')])
+        style.map("Solicitado.TButton", background=[('active', '#e0a800')])
 
     def _criar_interface(self):
         self.criar_frame()

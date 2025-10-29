@@ -99,14 +99,16 @@ class ControladorDivida(AbstractControlador):
                 if pagamentos_pendentes:
                     btn_texto = "Pagamento Solicitado"
                     btn_state = "disabled"
+                    btn_style = "Solicitado.TButton"
                 else:
                     btn_texto = "Solicitar Pagamento"
                     btn_state = "normal"
+                    btn_style = "Salvar.TButton"
 
                 btn_pagamento = ttk.Button(
                     action_frame,
                     text=btn_texto,
-                    style="Salvar.TButton",
+                    style=btn_style,
                     command=lambda d=divida: self.solicitar_pagamento(d),
                     state=btn_state
                 )
