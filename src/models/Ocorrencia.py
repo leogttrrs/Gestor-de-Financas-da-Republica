@@ -167,7 +167,6 @@ class Ocorrencia:
     def criar_tabela_ocorrencia():
         db_manager = DatabaseManager()
         
-        # Cria a tabela se não existir
         comando = """
         CREATE TABLE IF NOT EXISTS ocorrencia (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

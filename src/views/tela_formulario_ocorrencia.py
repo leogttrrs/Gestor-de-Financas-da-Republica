@@ -11,8 +11,8 @@ class TelaFormularioOcorrencia(tk.Toplevel):
         self.ocorrencia_existente = ocorrencia_existente
 
         usuario = getattr(self.controlador._controlador_sistema, "usuario_logado", None)
-        if not usuario or usuario.tipo_usuario != "morador":
-            messagebox.showerror("Acesso Negado", "Apenas moradores podem acessar este formulário.")
+        if not usuario:
+            messagebox.showerror("Acesso Negado", "")
             self.destroy()
             return
 

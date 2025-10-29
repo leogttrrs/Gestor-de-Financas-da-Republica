@@ -197,23 +197,12 @@ class TelaOcorrencias:
                 command=comando
             )
 
-        tk.Button(
-            botoes_frame,
-            text="Fechar",
-            bg="#6c757d",
-            fg="white",
-            font=("Arial", 10, "bold"),
-            relief="flat",
-            padx=15,
-            pady=6,
-            command=modal.destroy
-        ).pack(side="left", padx=5)
-
         if usuario_logado and usuario_logado.tipo_usuario.lower() == "morador":
             criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
             criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
 
         elif usuario_logado and usuario_logado.tipo_usuario.lower() == "administrador":
+            criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
             criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
             criar_botao("Gerar Alerta", "#ffc107", lambda: self._abrir_modal_alerta()).pack(side="right", padx=5)
 
@@ -223,16 +212,6 @@ class TelaOcorrencias:
             elif ocorrencia.status == "Finalizado":
                 criar_botao("Marcar como Pendente", "#198754",
                             lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")).pack(side="right", padx=5)
-
-        rodape_info = tk.Frame(card, bg="white")
-        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
-        tk.Label(
-            rodape_info,
-            text=f"Status atual: {ocorrencia.status}",
-            bg="white",
-            fg="#444",
-            font=("Arial", 10, "italic")
-        ).pack(anchor="w")
 
         from tkinter import font as tkfont
         import math
@@ -247,39 +226,32 @@ class TelaOcorrencias:
             avg_char_width = max(1, font_obj.measure("abcdefghijklmnopqrstuvwxyz") / 26.0)
 
             for original_line in text.splitlines() or [""]:
-                line = original_line
-                words = line.split(" ")
+                words = original_line.split(" ")
                 cur_width = 0
                 cur_line_count = 1
                 for word in words:
                     word_w = font_obj.measure(word + " ")
                     if word_w > wrap_px:
                         chars_per_line = max(1, int(wrap_px / avg_char_width))
-                        # se houver parte acumulada na linha atual, conta essa linha e reinicia
                         if cur_width > 0:
                             cur_line_count += 1
                             cur_width = 0
-                        # número de linhas geradas pela palavra longa
                         needed = math.ceil(len(word) / chars_per_line)
-                        cur_line_count += (needed - 1)  # já contamos uma linha para começar
-                        # após palavra longa, cur_width = medida do resto (0)
+                        cur_line_count += (needed - 1)
                         cur_width = 0
                     else:
                         if cur_width + word_w <= wrap_px:
                             cur_width += word_w
                         else:
-                            # quebra de linha
                             cur_line_count += 1
                             cur_width = word_w
                 total_lines += cur_line_count
             return total_lines
 
         num_visual_lines = estimate_visual_lines(descr_text, fonte, wrap_pixels)
-
         MAX_VISIBLE_LINES = 5
 
         if num_visual_lines > MAX_VISIBLE_LINES:
-
             scroll_container = tk.Frame(card, bg="#f8f9fa")
             scroll_container.pack(fill="both", expand=False, padx=20, pady=(0, 10))
 
@@ -327,7 +299,18 @@ class TelaOcorrencias:
             )
             descricao_label.pack(fill="x", padx=10, pady=10, anchor="w")
 
+        rodape_info = tk.Frame(card, bg="white")
+        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
+        tk.Label(
+            rodape_info,
+            text=f"Status atual: {ocorrencia.status}",
+            bg="white",
+            fg="#444",
+            font=("Arial", 10, "italic")
+        ).pack(anchor="w")
+
         modal.update()
+
 
     def _finalizar_ocorrencia(self, modal, ocorrencia):
         """Altera o status de 'Pendente' para 'Finalizado'."""
