@@ -80,7 +80,9 @@ class ControladorContrato(AbstractControlador):
         if self._tela_contrato is None:
             return
         
-        contratos = self.listar_contratos()
+        contratos = self.listar_contratos(filtro_status='ativo')
+        contratos_agendados = self.listar_contratos(filtro_status='agendado')
+        contratos = contratos + contratos_agendados
         
         contratos_dict = []
         for contrato in contratos:
@@ -194,7 +196,7 @@ class ControladorContrato(AbstractControlador):
             if self._morador_possui_divida_ativa(contrato.morador.id):
                 if self._tela_contrato:
                     self._tela_contrato.mostrar_erro(
-                        "Não foi possível efetuar a operação! O morador possui pendências de dívida."
+                        "Não foi possível efetuar a operação! O morador possui pendências de dívida"
                     )
                 return False
             

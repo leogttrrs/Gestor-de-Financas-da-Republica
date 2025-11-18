@@ -67,16 +67,43 @@ def popular_banco():
                                           (num, republica_id))[0]['id']
 
         # --- 4. CRIAR CONTRATOS ---
-        print("\n[PASSO 4/5] Associando moradores aos quartos...")
-        for morador_nome, quarto_num in [('João da Silva', 101), ('Maria Oliveira', 102)]:
-            morador_id = usuarios_ids[morador_nome]
-            quarto_id = quartos_ids[quarto_num]
-            if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND status = 'ativo'",
-                                             (morador_id,)):
-                db_manager.executar_comando(
-                    "INSERT INTO contrato (morador_id, quarto_id, data_inicio, valor_aluguel, status) VALUES (?, ?, ?, ?, 'ativo')",
-                    (morador_id, quarto_id, date.today(), 550.00))
-                print(f"  - Contrato criado para '{morador_nome}' no quarto {quarto_num}.")
+        print("\n[PASSO 4/5] Criando contratos (ativos, agendados e finalizados)...")
+        
+        # Contrato ATIVO - João no quarto 101 (morador com dívida quitada)
+        if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND quarto_id = ? AND status = 'ativo'",
+                                         (usuarios_ids['João da Silva'], quartos_ids[101])):
+            db_manager.executar_comando(
+                "INSERT INTO contrato (morador_id, quarto_id, data_inicio, data_fim, valor_aluguel, status) VALUES (?, ?, ?, ?, ?, 'ativo')",
+                (usuarios_ids['João da Silva'], quartos_ids[101], date.today() - timedelta(days=90), 
+                 date.today() + timedelta(days=275), 550.00))
+            print(f"  - Contrato ATIVO criado para João da Silva no quarto 101.")
+        
+        # Contrato ATIVO - Maria no quarto 102 (morador com dívida vencida)
+        if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND quarto_id = ? AND status = 'ativo'",
+                                         (usuarios_ids['Maria Oliveira'], quartos_ids[102])):
+            db_manager.executar_comando(
+                "INSERT INTO contrato (morador_id, quarto_id, data_inicio, data_fim, valor_aluguel, status) VALUES (?, ?, ?, ?, ?, 'ativo')",
+                (usuarios_ids['Maria Oliveira'], quartos_ids[102], date.today() - timedelta(days=60), 
+                 date.today() + timedelta(days=305), 600.00))
+            print(f"  - Contrato ATIVO criado para Maria Oliveira no quarto 102.")
+        
+        # Contrato AGENDADO - Carlos no quarto 201 (morador com dívida vencida)
+        if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND quarto_id = ? AND status = 'agendado'",
+                                         (usuarios_ids['Carlos Pereira'], quartos_ids[201])):
+            db_manager.executar_comando(
+                "INSERT INTO contrato (morador_id, quarto_id, data_inicio, data_fim, valor_aluguel, status) VALUES (?, ?, ?, ?, ?, 'agendado')",
+                (usuarios_ids['Carlos Pereira'], quartos_ids[201], date.today() + timedelta(days=30), 
+                 date.today() + timedelta(days=395), 580.00))
+            print(f"  - Contrato AGENDADO criado para Carlos Pereira no quarto 201 (início em 30 dias).")
+        
+        # Contrato FINALIZADO - João no quarto 202 (contrato passado, sem dívidas)
+        if not db_manager.executar_query("SELECT id FROM contrato WHERE morador_id = ? AND quarto_id = ? AND status = 'finalizado'",
+                                         (usuarios_ids['João da Silva'], quartos_ids[202])):
+            db_manager.executar_comando(
+                "INSERT INTO contrato (morador_id, quarto_id, data_inicio, data_fim, valor_aluguel, status) VALUES (?, ?, ?, ?, ?, 'finalizado')",
+                (usuarios_ids['João da Silva'], quartos_ids[202], date.today() - timedelta(days=400), 
+                 date.today() - timedelta(days=35), 520.00))
+            print(f"  - Contrato FINALIZADO criado para João da Silva no quarto 202 (encerrado há 35 dias).")
 
         # --- 5. CRIAR DÍVIDAS E PAGAMENTOS ---
         print("\n[PASSO 5/5] Criando dívidas e pagamentos de exemplo...")
