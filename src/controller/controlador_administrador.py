@@ -111,8 +111,8 @@ class ControladorAdministrador(AbstractControlador):
             tela_perfil.mostrar_formulario_perfil_admin(dados_usuario)
 
     def abrir_tela_mudar_senha(self, tela_perfil):
-        from tkinter import messagebox
-        messagebox.showinfo("Em desenvolvimento", "Funcionalidade de mudar senha em desenvolvimento.")
+        tela_perfil._limpar_conteudo()
+        tela_perfil.mostrar_formulario_mudar_senha()
 
     def excluir_perfil_admin(self, tela_perfil):
         from tkinter import messagebox
@@ -189,3 +189,42 @@ class ControladorAdministrador(AbstractControlador):
                 
         except Exception as e:
             tela_perfil.mostrar_mensagem_erro(f"Erro ao atualizar perfil: {str(e)}")
+
+    def alterar_senha(self, tela_perfil, senha_atual, senha_nova, confirmar_senha):
+        try:
+            usuario_logado = self._controlador_sistema.usuario_logado
+            if not usuario_logado:
+                tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
+                return
+            
+            if not senha_atual or not senha_nova or not confirmar_senha:
+                tela_perfil.mostrar_mensagem_erro("Todos os campos são obrigatórios")
+                return
+            
+            if senha_nova != confirmar_senha:
+                tela_perfil.mostrar_mensagem_erro("A nova senha e a confirmação não coincidem")
+                return
+            
+            if len(senha_nova) < 6:
+                tela_perfil.mostrar_mensagem_erro("A nova senha deve ter pelo menos 6 caracteres")
+                return
+            
+            admin = Administrador.buscar_por_cpf(usuario_logado.cpf)
+            if not admin:
+                tela_perfil.mostrar_mensagem_erro("Administrador não encontrado")
+                return
+            
+            if not admin.verificar_senha(senha_atual):
+                tela_perfil.mostrar_mensagem_erro("Senha atual incorreta")
+                return
+            
+            sucesso, mensagem = Administrador.alterar_senha(usuario_logado.cpf, senha_nova)
+            
+            if sucesso:
+                tela_perfil.mostrar_mensagem_sucesso("Senha alterada com sucesso!")
+                self.abrir_tela_perfil(tela_perfil)
+            else:
+                tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {mensagem}")
+                
+        except Exception as e:
+            tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {str(e)}")

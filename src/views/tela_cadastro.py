@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from .components import ContainersPadrao, IconesPadrao, TextosPadrao, FormularioPadrao
+from src.utils.validador import Validador
 
 
 class TelaCadastroAdministrador(FormularioPadrao):
@@ -139,20 +140,69 @@ class TelaCadastroAdministrador(FormularioPadrao):
                                           lambda: self.on_voltar())
 
     def validar_campos(self):
-        """Validação específica para administrador"""
-        campos_invalidos = super().validar_campos()
-
         valores = self.obter_valores()
-
-        # Validação de senhas
-        senha = valores.get("senha", "")
-        confirmar_senha = valores.get("confirmar_senha", "")
-
+        
+        nome = valores.get("nome", "").strip()
+        if not nome:
+            self.exibir_erro("O campo Nome é obrigatório")
+            return ["nome"]
+        
+        nome_validado = Validador.validar_nome(nome)
+        if isinstance(nome_validado, str) and ("inválido" in nome_validado.lower() or "deve ter" in nome_validado.lower()):
+            self.exibir_erro(nome_validado)
+            return ["nome"]
+        
+        email = valores.get("email", "").strip()
+        if not email:
+            self.exibir_erro("O campo E-mail é obrigatório")
+            return ["email"]
+        
+        email_validado = Validador.validar_email(email)
+        if isinstance(email_validado, str) and "inválido" in email_validado.lower():
+            self.exibir_erro(email_validado)
+            return ["email"]
+        
+        cpf = valores.get("cpf", "").strip()
+        if not cpf:
+            self.exibir_erro("O campo CPF é obrigatório")
+            return ["cpf"]
+        
+        cpf_validado = Validador.validar_cpf(cpf)
+        if isinstance(cpf_validado, str) and ("inválido" in cpf_validado.lower() or "erro" in cpf_validado.lower()):
+            self.exibir_erro(cpf_validado)
+            return ["cpf"]
+        
+        telefone = valores.get("telefone", "").strip()
+        if not telefone:
+            self.exibir_erro("O campo Telefone é obrigatório")
+            return ["telefone"]
+        
+        telefone_validado = Validador.validar_telefone(telefone)
+        if isinstance(telefone_validado, str) and "inválido" in telefone_validado.lower():
+            self.exibir_erro(telefone_validado)
+            return ["telefone"]
+        
+        senha = valores.get("senha", "").strip()
+        confirmar_senha = valores.get("confirmar_senha", "").strip()
+        
+        if not senha:
+            self.exibir_erro("O campo Senha é obrigatório")
+            return ["senha"]
+        
+        if not confirmar_senha:
+            self.exibir_erro("O campo Confirmar Senha é obrigatório")
+            return ["confirmar_senha"]
+        
+        valida, mensagem = Validador.validar_senha(senha)
+        if not valida:
+            self.exibir_erro(mensagem)
+            return ["senha"]
+        
         if senha != confirmar_senha:
             self.exibir_erro("As senhas não coincidem")
             return ["senha", "confirmar_senha"]
 
-        return campos_invalidos
+        return []
 
     def executar(self):
         """Executa o modal e retorna os dados coletados"""
