@@ -5,7 +5,6 @@ from .controlador_morador import ControladorMorador
 from .controlador_republica import ControladorRepublica
 from .controlador_contrato import ControladorContrato
 from .controlador_divida import ControladorDivida
-from .controlador_pagamento import ControladorPagamento
 from .controlador_ocorrencia import ControladorOcorrencia
 from .controlador_alerta import ControladorAlerta
 from .controlador_quarto import ControladorQuarto
@@ -26,11 +25,9 @@ class ControladorSistema:
         self.__controlador_republica = ControladorRepublica(self)
         self.__controlador_contrato = ControladorContrato(self)
         self.__controlador_divida = ControladorDivida(self)
-        self.__controlador_pagamento = ControladorPagamento(self)
         self.__controlador_ocorrencia = ControladorOcorrencia(self)
         self.__controlador_alerta = ControladorAlerta(self)
         self.__controlador_quarto = ControladorQuarto(self)
-        self.__controlador_recorrencia = ControladorRecorrencia(self)
         self.__usuario_logado = None
         self.__tela_atual = None
         
@@ -123,11 +120,9 @@ class ControladorSistema:
             3: self.gerenciar_republica,
             4: self.gerenciar_contratos,
             5: self.gerenciar_dividas,
-            6: self.gerenciar_pagamentos,
             7: self.gerenciar_ocorrencias,
             8: self.gerenciar_alertas,
             9: self.gerenciar_quartos,
-            10: self.gerenciar_recorrencias,
             0: self.encerra_sistema
         }
         
@@ -146,9 +141,6 @@ class ControladorSistema:
     def gerenciar_dividas(self):
         self.__controlador_divida.abre_tela()
 
-    def gerenciar_pagamentos(self):
-        self.__controlador_pagamento.abre_tela()
-
     def gerenciar_ocorrencias(self):
         self.__controlador_ocorrencia.abre_tela()
 
@@ -157,9 +149,6 @@ class ControladorSistema:
 
     def gerenciar_quartos(self):
         self.__controlador_quarto.abre_tela()
-
-    def gerenciar_recorrencias(self):
-        self.__controlador_recorrencia.abre_tela()
 
     def salvar_todos_os_dados(self):
         pass
