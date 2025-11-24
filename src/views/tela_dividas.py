@@ -118,7 +118,7 @@ class TelaDividas(ComponenteBase):
         self.atualizar_lista()
         self._carregar_conteudo_abas()
 
-    def atualizar_lista(self, event=None):
+    def atualizar_lista(self):
         if not self.container_lista:
             return
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional
+from typing import List
 from src.database import DatabaseManager
 from src.models.Divida import Divida
 
@@ -36,35 +36,6 @@ class Pagamento:
         return self
 
     @staticmethod
-    def buscar_por_divida(divida_id: int) -> Optional[Pagamento]:
-        db = DatabaseManager()
-        query = "SELECT * FROM pagamento WHERE divida_id = ? ORDER BY id DESC LIMIT 1"
-        resultados = db.executar_query(query, (divida_id,))
-
-        if not resultados:
-            return None
-
-        divida_obj = Divida.buscar_por_id(divida_id)
-        if divida_obj:
-            return Pagamento(divida=divida_obj, **resultados[0])
-        return None
-
-    @staticmethod
-    def buscar_todos_por_divida(divida_id: int) -> List[Pagamento]:
-        db = DatabaseManager()
-        query = "SELECT * FROM pagamento WHERE divida_id = ? ORDER BY id DESC"
-        resultados = db.executar_query(query, (divida_id,))
-
-        pagamentos = []
-        for row in resultados:
-            divida_obj = Divida.buscar_por_id(divida_id)
-            if divida_obj:
-                pagamento_obj = Pagamento(divida=divida_obj, **row)
-                pagamentos.append(pagamento_obj)
-
-        return pagamentos
-
-    @staticmethod
     def buscar_por_divida_e_status(divida_id: int, status: str) -> List[Pagamento]:
         db = DatabaseManager()
         query = "SELECT * FROM pagamento WHERE divida_id = ? AND status = ? ORDER BY id DESC"
@@ -81,35 +52,11 @@ class Pagamento:
 
     @staticmethod
     def buscar_por_morador(morador_id: int) -> List[Pagamento]:
-        """Busca todos os pagamentos de um morador específico"""
         db = DatabaseManager()
         query = """
             SELECT p.* FROM pagamento p
             JOIN divida d ON p.divida_id = d.id
             WHERE d.morador_id = ?
-            ORDER BY p.data_pagamento DESC
-        """
-        resultados_pagamento = db.executar_query(query, (morador_id,))
-
-        pagamentos = []
-        for row in resultados_pagamento:
-            divida_obj = Divida.buscar_por_id(row['divida_id'])
-            if divida_obj:
-                row_copy = dict(row)
-                row_copy.pop('divida_id', None)
-                pagamento_obj = Pagamento(divida=divida_obj, **row_copy)
-                pagamentos.append(pagamento_obj)
-
-        return pagamentos
-
-    @staticmethod
-    def buscar_pendentes_por_morador(morador_id: int) -> List[Pagamento]:
-        """Busca apenas pagamentos pendentes de um morador específico"""
-        db = DatabaseManager()
-        query = """
-            SELECT p.* FROM pagamento p
-            JOIN divida d ON p.divida_id = d.id
-            WHERE p.status = 'pendente' AND d.morador_id = ?
             ORDER BY p.data_pagamento DESC
         """
         resultados_pagamento = db.executar_query(query, (morador_id,))
@@ -142,22 +89,4 @@ class Pagamento:
             else:
                 print(f"AVISO: Dívida ID {row['divida_id']} não encontrada para o Pagamento ID {row['id']}")
 
-        return pagamentos
-
-    @staticmethod
-    def buscar_confirmados() -> List[Pagamento]:
-        db = DatabaseManager()
-        query = "SELECT * FROM pagamento WHERE status = 'confirmado' ORDER BY data_pagamento DESC"
-        resultados_pagamento = db.executar_query(query)
-
-        pagamentos = []
-        for row in resultados_pagamento:
-            divida_obj = Divida.buscar_por_id(row['divida_id'])
-            if divida_obj:
-                row_copy = dict(row)
-                row_copy.pop('divida_id', None)
-                pagamento_obj = Pagamento(divida=divida_obj, **row_copy)
-                pagamentos.append(pagamento_obj)
-            else:
-                print(f"AVISO: Dívida ID {row['divida_id']} não encontrada para o Pagamento ID {row['id']}")
         return pagamentos
