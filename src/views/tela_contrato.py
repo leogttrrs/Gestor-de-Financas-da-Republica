@@ -115,7 +115,7 @@ class TelaContrato:
     def _solicitar_exclusao_agendado(self, contrato_id: int):
         if self.confirmar_acao("Deseja realmente excluir este contrato agendado?"):
             if self._controlador_contrato.excluir_contrato(contrato_id):
-                self.mostrar_sucesso("Contrato agendado excluído com sucesso!")
+                self.mostrar_sucesso("Contrato agendado foi excluído com sucesso!")
                 self.atualizar_lista()
 
     def exibir_contratos(self, contratos=None):
@@ -124,12 +124,12 @@ class TelaContrato:
     def _abrir_modal_novo_contrato(self):
         moradores_cadastrados = self._controlador_contrato.listar_moradores()
         if not moradores_cadastrados:
-            self.mostrar_erro("Não há morador cadastrado.")
+            self.mostrar_erro("Não há morador cadastrado")
             return
 
         quartos_cadastrados = self._controlador_contrato.listar_quartos()
         if not quartos_cadastrados:
-            self.mostrar_erro("Não há quarto cadastrado.")
+            self.mostrar_erro("Não há quarto cadastrado!")
             return
 
         self._criar_modal_contrato(moradores_cadastrados, quartos_cadastrados)
