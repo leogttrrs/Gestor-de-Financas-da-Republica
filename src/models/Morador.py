@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from utils.validador import Validador
 from .usuario import Usuario
 from src.database.database_manager import DatabaseManager
 from typing import List
@@ -65,3 +67,49 @@ class Morador(Usuario):
         """
         resultados = db_manager.executar_query(query, (morador_id,))
         return len(resultados) > 0
+    
+    @staticmethod
+    def buscar_por_cpf(cpf: str) -> Morador | None:
+        db_manager = DatabaseManager()
+        query = "SELECT * FROM usuario WHERE cpf = ? AND tipo_usuario = 'morador'"
+        resultados = db_manager.executar_query(query, (cpf,))
+        return Morador(**resultados[0]) if resultados else None
+    
+    @staticmethod
+    def buscar_por_id(morador_id: int) -> Morador | None:
+        db_manager = DatabaseManager()
+        query = "SELECT * FROM usuario WHERE id = ? AND tipo_usuario = 'morador'"
+        resultados = db_manager.executar_query(query, (morador_id,))
+        return Morador(**resultados[0]) if resultados else None
+    
+    @staticmethod
+    def excluir(morador_id: int) -> bool:
+        db_manager = DatabaseManager()
+        query = "DELETE FROM usuario WHERE id = ? AND tipo_usuario = 'morador'"
+        linhas_afetadas = db_manager.executar_comando(query, (morador_id,))
+        return linhas_afetadas > 0
+    
+    def salvar(self) -> Morador:
+        # 1 — valida
+        valido, mensagem = self.validar_dados()
+        if not valido:
+            raise ValueError(f"Erro de validação ao salvar morador: {mensagem}")
+
+        # 2 — garante que senha tenha hash
+        if self.senhaCriptografada and not Validador.eh_hash(self.senhaCriptografada):
+            self.senhaCriptografada = Validador.hash_senha(self.senhaCriptografada)
+
+        # 3 — delega tudo ao Usuario
+        if self.id is None:
+            sucesso, mensagem = Usuario.salvar_usuario(self)
+        else:
+            sucesso, mensagem = Usuario.atualizar_usuario(self)
+
+        if not sucesso:
+            raise RuntimeError(mensagem)
+
+        return self
+
+        
+
+        

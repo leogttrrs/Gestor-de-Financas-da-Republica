@@ -4,9 +4,8 @@ from src.database import DatabaseManager
 from datetime import datetime, date
 from decimal import Decimal
 from .Morador import Morador
-from dataclasses import dataclass, field
 
-@dataclass
+
 class Ocorrencia:
 
     def __init__(self, morador: Morador, titulo: str, descricao: str, data: str, status: str = 'Pendente', id: Optional[int] = None):
@@ -87,7 +86,6 @@ class Ocorrencia:
 
     
     def salvar(self) -> 'Ocorrencia':
-        Ocorrencia.criar_tabela_ocorrencia()
         db_manager = DatabaseManager()
         if self.id is None:
             comando = """INSERT INTO ocorrencia (morador_id, titulo, descricao, data, status) 
@@ -102,20 +100,16 @@ class Ocorrencia:
         return self
 
 
-    def excluir(self) -> bool:
+    def excluir(self) -> int:
         if self.id is None:
-            return False
-        try:
-            db_manager = DatabaseManager()
-            comando = "DELETE FROM ocorrencia WHERE id = ?"
-            db_manager.executar_comando(comando, (self.id,))
-            return True
-        except Exception as e:
-            print("Erro ao excluir ocorrência:", e)
-            return False
+            return 0
+        
+        db_manager = DatabaseManager()
+        comando = "DELETE FROM ocorrencia WHERE id = ?"
+        return db_manager.executar_comando(comando, (self.id,))
+
 
     def finalizar(self):
-        self.data_fim = date.today()
         self.status = 'Finalizado'
         self.salvar()
 
@@ -160,32 +154,5 @@ class Ocorrencia:
         if not (self.descricao and self.descricao.strip()):
             return False, "Descrição é obrigatória."
         return True, ""
-        if not (self.descricao and self.descricao.strip()):
-            return False, "Descrição é obrigatória."
-        return True, ""
-
-    def criar_tabela_ocorrencia():
-        db_manager = DatabaseManager()
         
-        comando = """
-        CREATE TABLE IF NOT EXISTS ocorrencia (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            morador_id INTEGER NOT NULL,
-            titulo TEXT NOT NULL,
-            descricao TEXT NOT NULL,
-            data TEXT NOT NULL,
-            status TEXT NOT NULL
-        );
-        """
-        db_manager.executar_comando(comando)
 
-        colunas_existentes = db_manager.executar_query(
-            "PRAGMA table_info(ocorrencia);"
-        )
-        colunas_existentes = [c['name'] for c in colunas_existentes]
-
-        colunas_necessarias = ['id','morador_id','titulo','descricao','data','status']
-        for coluna in colunas_necessarias:
-            if coluna not in colunas_existentes:
-                comando = f"ALTER TABLE ocorrencia ADD COLUMN {coluna} TEXT;"
-                db_manager.executar_comando(comando)

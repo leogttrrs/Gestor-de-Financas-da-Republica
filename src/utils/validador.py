@@ -206,3 +206,8 @@ class Validador:
             return codigo_formatado
         except (ValueError, TypeError):
             return "inválido: o código deve ser um número inteiro."
+        
+    @staticmethod
+    def eh_hash(texto: str) -> bool:
+        return len(texto) > 50
+
