@@ -143,10 +143,9 @@ class DatabaseManager:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     morador_id INTEGER NOT NULL,
                     descricao TEXT NOT NULL,
-                    data_ocorrencia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     status BOOL NOT NULL,
-                    prioridade TEXT NOT NULL DEFAULT 'media' CHECK (prioridade IN ('baixa', 'media', 'alta', 'urgente')),
-                    categoria TEXT,
+                    titulo TEXT NOT NULL,
                     FOREIGN KEY (morador_id) REFERENCES usuario(id) ON DELETE CASCADE
                 )
             """)

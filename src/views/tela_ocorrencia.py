@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import List, Optional
+from tkinter import font as tkfont
+import math
 from .components.textos import TextosPadrao
 from .components.botoes import BotoesPadrao
 from .components.tabelas import TabelasPadrao
 from .components.modais import ModaisPadrao
-from ..models.Ocorrencia import Ocorrencia
 from .tela_formulario_ocorrencia import TelaFormularioOcorrencia
 
 
@@ -14,7 +15,7 @@ class TelaOcorrencias:
         self._controlador_ocorrencia = controlador_ocorrencia
         self.main_frame = None
         self.frame_lista = None
-        self.tree = None
+        self.linhas_frame = None
 
     def inicializar_componentes(self, parent):
         self.main_frame = tk.Frame(parent, bg="white")
@@ -31,18 +32,17 @@ class TelaOcorrencias:
 
         titulo_frame = tk.Frame(header_frame, bg="white")
         titulo_frame.pack(side="left")
-
         TextosPadrao.titulo_principal(titulo_frame, "Ocorrências")
 
         botoes_frame = tk.Frame(header_frame, bg="white")
         botoes_frame.pack(side="right")
 
         usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
-        if usuario_logado and usuario_logado.tipo_usuario == 'morador':
+        if usuario_logado and getattr(usuario_logado, "tipo_usuario", "").lower() == 'morador':
             btn_registrar = ttk.Button(
                 botoes_frame,
                 text="Registrar Ocorrência",
-                command=self._abrir_formulario
+                command=self._controlador_ocorrencia.abrir_tela_formulario
             )
             btn_registrar.pack(side="right")
 
@@ -86,47 +86,59 @@ class TelaOcorrencias:
 
         self.linhas_frame.bind("<Configure>", on_frame_configure)
 
+        # Preenche a lista chamando o controlador/listagem padrão
         self.atualizar_lista()
 
     def atualizar_lista(self, ocorrencias: Optional[List] = None):
         usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
 
-        ocorrencias = Ocorrencia.buscar_todos()
         if ocorrencias is None:
-            ocorrencias = self._controlador_ocorrencia.listar_ocorrencias()
+            ocorrencias = self._controlador_ocorrencia.listar_ocorrencias() or []
 
+        # Filtragem por tipo de usuário
         if usuario_logado:
-            if usuario_logado.tipo_usuario.lower() == "morador":
-                cpf_logado = usuario_logado.cpf
+            tipo = getattr(usuario_logado, "tipo_usuario", "").lower()
+            if tipo == "morador":
+                cpf_logado = getattr(usuario_logado, "cpf", None)
                 ocorrencias = [
                     o for o in ocorrencias
-                    if o.morador and o.morador.cpf == cpf_logado
+                    if getattr(o, "morador", None) and getattr(o.morador, "cpf", None) == cpf_logado
                 ]
-            elif usuario_logado.tipo_usuario.lower() == "administrador":
+            elif tipo == "administrador":
+                # Administrador vê tudo
                 pass
+            else:
+                ocorrencias = []
         else:
             ocorrencias = []
 
+        # Limpa linhas existentes
         for widget in self.linhas_frame.winfo_children():
             widget.destroy()
 
-        if not ocorrencias and usuario_logado.tipo_usuario.lower() == "morador":
-            tk.Label(self.linhas_frame, text="Você não possui ocorrências.", bg="white").pack(pady=10)
+        # Mensagens de vazio
+        tipo_usuario = getattr(usuario_logado, "tipo_usuario", "").lower() if usuario_logado else ""
+        if not ocorrencias:
+            if tipo_usuario == "morador":
+                tk.Label(self.linhas_frame, text="Você não possui ocorrências.", bg="white").pack(pady=10)
+            elif tipo_usuario == "administrador":
+                tk.Label(self.linhas_frame, text="Não há ocorrências cadastradas.", bg="white").pack(pady=10)
+            else:
+                tk.Label(self.linhas_frame, text="Nenhuma ocorrência disponível.", bg="white").pack(pady=10)
             return
-        
-        elif not ocorrencias and usuario_logado.tipo_usuario.lower() == "administrador":
-            tk.Label(self.linhas_frame, text="Não há ocorrências cadastradas.", bg="white").pack(pady=10)
-            return
-        
+
+        # Renderiza cada ocorrência em linha
         for i, o in enumerate(ocorrencias):
-            morador = o.morador.nome if o.morador else "Desconhecido"
-            status = o.status if o.status else "Pendente"
+            morador_nome = getattr(getattr(o, "morador", None), "nome", "Desconhecido")
+            status = getattr(o, "status", "Pendente") or "Pendente"
+            titulo = getattr(o, "titulo", "")
+            descricao = getattr(o, "descricao", "")
 
             linha = tk.Frame(self.linhas_frame, bg="white")
             linha.pack(fill="x", pady=2)
 
-            tk.Label(linha, text=morador, bg="white", width=25, anchor="w").pack(side="left")
-            tk.Label(linha, text=o.titulo, bg="white", width=35, anchor="w").pack(side="left")
+            tk.Label(linha, text=morador_nome, bg="white", width=25, anchor="w").pack(side="left")
+            tk.Label(linha, text=titulo, bg="white", width=35, anchor="w").pack(side="left")
             tk.Label(linha, text=status, bg="white", width=15, anchor="w").pack(side="left")
 
             visualizar = tk.Label(
@@ -158,19 +170,25 @@ class TelaOcorrencias:
 
         tk.Label(
             header,
-            text=ocorrencia.titulo,
+            text=getattr(ocorrencia, "titulo", ""),
             bg="white",
             font=("Arial", 12, "bold"),
             anchor="w"
         ).pack(anchor="w")
 
-        try:
-            from datetime import datetime
-            data_formatada = datetime.strptime(str(ocorrencia.data), "%Y-%m-%d").strftime("%d/%m/%Y")
-        except Exception:
-            data_formatada = str(ocorrencia.data)
+        # tentativa robusta de formatar data
+        data_raw = getattr(ocorrencia, "data", "")
+        data_formatada = str(data_raw)
+        from datetime import datetime
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+            try:
+                data_formatada = datetime.strptime(str(data_raw), fmt).strftime("%d/%m/%Y")
+                break
+            except Exception:
+                pass
 
-        autor_data = f"{ocorrencia.morador.nome if ocorrencia.morador else 'Desconhecido'} - {data_formatada}"
+        autor_nome = getattr(getattr(ocorrencia, "morador", None), "nome", "Desconhecido")
+        autor_data = f"{autor_nome} - {data_formatada}"
         tk.Label(
             header,
             text=autor_data,
@@ -200,26 +218,23 @@ class TelaOcorrencias:
                 command=comando
             )
 
-        if usuario_logado and usuario_logado.tipo_usuario.lower() == "morador":
+        tipo = getattr(usuario_logado, "tipo_usuario", "").lower() if usuario_logado else ""
+        if tipo == "morador":
             criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
             criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
-
-        elif usuario_logado and usuario_logado.tipo_usuario.lower() == "administrador":
+        elif tipo == "administrador":
             criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
             criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
             criar_botao("Gerar Alerta", "#ffc107", lambda: self._abrir_modal_alerta()).pack(side="right", padx=5)
 
-            if ocorrencia.status == "Pendente":
+            if getattr(ocorrencia, "status", "") == "Pendente":
                 criar_botao("Marcar como Finalizado", "#198754",
                             lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Finalizado")).pack(side="right", padx=5)
-            elif ocorrencia.status == "Finalizado":
+            elif getattr(ocorrencia, "status", "") == "Finalizado":
                 criar_botao("Marcar como Pendente", "#198754",
                             lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")).pack(side="right", padx=5)
 
-        from tkinter import font as tkfont
-        import math
-
-        descr_text = str(ocorrencia.descricao or "")
+        descr_text = str(getattr(ocorrencia, "descricao", "") or "")
         wrap_pixels = 520
         fonte = tkfont.Font(family="Arial", size=10)
         linha_altura = fonte.metrics("linespace")
@@ -306,7 +321,7 @@ class TelaOcorrencias:
         rodape_info.pack(fill="x", padx=20, pady=(0, 10))
         tk.Label(
             rodape_info,
-            text=f"Status atual: {ocorrencia.status}",
+            text=f"Status atual: {getattr(ocorrencia, 'status', '')}",
             bg="white",
             fg="#444",
             font=("Arial", 10, "italic")
@@ -314,15 +329,12 @@ class TelaOcorrencias:
 
         modal.update()
 
-
     def _finalizar_ocorrencia(self, modal, ocorrencia):
-        """Altera o status de 'Pendente' para 'Finalizado'."""
         confirm = messagebox.askyesno("Confirmar", "Deseja marcar esta ocorrência como finalizada?")
         if not confirm:
             return
 
         sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, "Finalizado")
-
         if sucesso:
             messagebox.showinfo("Sucesso", "Ocorrência marcada como finalizada!")
             modal.destroy()
@@ -331,7 +343,6 @@ class TelaOcorrencias:
             messagebox.showerror("Erro", "Não foi possível atualizar o status da ocorrência.")
 
     def _gerar_alerta(self):
-        """Exibe um modal informando que está em desenvolvimento."""
         alerta_modal = tk.Toplevel(self.main_frame)
         alerta_modal.title("Gerar Alerta")
         alerta_modal.geometry("300x150")
@@ -348,10 +359,12 @@ class TelaOcorrencias:
         ttk.Button(alerta_modal, text="Fechar", command=alerta_modal.destroy).pack(pady=10)
 
     def _abrir_formulario(self):
-        TelaFormularioOcorrencia(parent=self.main_frame, controlador_ocorrencia=self._controlador_ocorrencia).grab_set()
+        # delega para o controlador (mantive o nome do método que você já tem)
+        self._controlador_ocorrencia.abrir_tela_formulario()
 
-    def exibir_ocorrencias(self, lista):
-        self.atualizar_lista(lista)
+    def exibir_ocorrencias(self, lista: List):
+        # Compatível com controlador que envia OBJETOS Ocorrencia
+        self.atualizar_lista(ocorrencias=lista)
 
     def mostrar_erro_modal(self, msg: str):
         messagebox.showerror("Erro", msg)
@@ -370,7 +383,6 @@ class TelaOcorrencias:
         ).grab_set()
 
     def _excluir_ocorrencia(self, modal_visualizar, ocorrencia):
-        """Exibe um modal de confirmação antes de excluir a ocorrência."""
         def confirmar_exclusao():
             sucesso = self._controlador_ocorrencia.excluir_ocorrencia(ocorrencia.id)
             if sucesso:
@@ -425,7 +437,6 @@ class TelaOcorrencias:
             cursor="hand2",
             command=confirmar_exclusao
         ).pack(side="right", padx=10)
-
 
     def _alterar_status_ocorrencia(self, modal, ocorrencia, novo_status):
         sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, novo_status)
