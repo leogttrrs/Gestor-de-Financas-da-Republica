@@ -36,12 +36,6 @@ class MenuLateral:
         
         self.menu_container = ttk.Frame(self.frame, style="MenuBackground.TFrame")
         self.menu_container.pack(fill="both", expand=True, padx=0, pady=0)
-        
-        footer_frame = ttk.Frame(self.frame, style="MenuBackground.TFrame")
-        footer_frame.pack(side="bottom", fill="x", padx=10, pady=10)
-        
-        btn_sair = ttk.Button(footer_frame, text="🚪 Sair", command=self._sair, style="MenuButton.TButton")
-        btn_sair.pack(fill="x")
     
     def definir_opcoes_menu(self, opcoes: List[Tuple[str, Callable]]):
         self.opcoes_menu = opcoes
@@ -107,7 +101,8 @@ class MenuAdministrador(MenuLateral):
             ("💰 Dívidas", lambda: self._navegar("dividas")),
             ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
             ("🔔 Alertas", lambda: self._navegar("alertas")),
-            ("🧑 Meu Perfil", lambda: self._navegar("perfil_admin"))
+            ("🧑 Meu Perfil", lambda: self._navegar("perfil_admin")),
+            ("🚪 Sair", lambda: self._sair())
         ]
         self.definir_opcoes_menu(opcoes)
     
@@ -134,12 +129,14 @@ class MenuMorador(MenuLateral):
                 ("💰 Dívidas", lambda: self._navegar("dividas")),
                 ("⚠️ Ocorrências", lambda: self._navegar("ocorrencias")),
                 ("🔔 Alertas", lambda: self._navegar("alertas")),
-                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
+                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador")),
+                ("🚪 Sair", lambda: self._sair())
             ]
         else:
             opcoes = [
                 ("💰 Dívidas", lambda: self._navegar("dividas")),
-                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador"))
+                ("🧑 Meu Perfil", lambda: self._navegar("perfil_morador")),
+                ("🚪 Sair", lambda: self._sair())
             ]
             self._atualizar_subtitulo_acesso_limitado()
 
@@ -150,7 +147,7 @@ class MenuMorador(MenuLateral):
             if isinstance(widget, ttk.Frame) and hasattr(widget, 'winfo_children'):
                 for child in widget.winfo_children():
                     if isinstance(child, ttk.Label) and "Morador" in child.cget("text"):
-                        child.configure(text="Morador (Acesso Limitado)", foreground="orange")
+                        child.configure(text="Morador", foreground="white")
                         break
 
     def _navegar(self, secao):

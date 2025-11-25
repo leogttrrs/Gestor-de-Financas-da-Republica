@@ -287,7 +287,7 @@ class ControladorContrato(AbstractControlador):
 
             if data_inicio < date.today():
                 self._tela_contrato.mostrar_erro_modal(
-                    "Data de início inválida! Data de início deve ser igual ou posterior ao dia de hoje."
+                    "Data de inicio inválida! Data de inicio deve ser igual ou posterior ao dia de hoje"
                 )
                 return
             elif data_inicio == date.today():
@@ -298,12 +298,6 @@ class ControladorContrato(AbstractControlador):
             if data_fim <= data_inicio:
                 self._tela_contrato.mostrar_erro_modal(
                     "Data de fim inválida! A data de fim deve ser posterior à data de início do contrato."
-                )
-                return
-
-            if data_fim <= date.today():
-                self._tela_contrato.mostrar_erro_modal(
-                    "Data de fim inválida! Informe uma data posterior ao dia de hoje."
                 )
                 return
 

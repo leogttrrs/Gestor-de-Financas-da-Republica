@@ -1,8 +1,6 @@
 from .abstract_controlador import AbstractControlador
 from src.models.Morador import Morador
-from src.models.Contrato import Contrato
-from src.views.tela_morador import TelaMoradores
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 class ControladorMorador(AbstractControlador):
     def __init__(self, controlador_sistema):
@@ -110,9 +108,6 @@ class ControladorMorador(AbstractControlador):
 
             return True, novo
 
-        except Exception as e:
-            return False, str(e)
-
     def abrir_tela_perfil(self, tela_perfil):
         if self._controlador_sistema.usuario_logado:
             dados_usuario = {
@@ -161,6 +156,46 @@ class ControladorMorador(AbstractControlador):
                 
         except Exception as e:
             tela_perfil.mostrar_mensagem_erro(f"Erro ao atualizar perfil: {str(e)}")
+
+    def alterar_senha(self, tela_perfil, senha_atual, senha_nova, confirmar_senha):
+        try:
+            usuario_logado = self._controlador_sistema.usuario_logado
+            if not usuario_logado:
+                tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
+                return
+            
+            if not senha_atual or not senha_nova or not confirmar_senha:
+                tela_perfil.mostrar_mensagem_erro("Todos os campos são obrigatórios")
+                return
+            
+            if senha_nova != confirmar_senha:
+                tela_perfil.mostrar_mensagem_erro("A nova senha e a confirmação não coincidem")
+                return
+            
+            if len(senha_nova) < 6:
+                tela_perfil.mostrar_mensagem_erro("A nova senha deve ter pelo menos 6 caracteres")
+                return
+            
+            morador = Morador.buscar_por_cpf(usuario_logado.cpf)
+            if not morador:
+                tela_perfil.mostrar_mensagem_erro("Morador não encontrado")
+                return
+            
+            if not morador.verificar_senha(senha_atual):
+                tela_perfil.mostrar_mensagem_erro("Senha atual incorreta")
+                return
+            
+            sucesso, mensagem = Morador.alterar_senha(usuario_logado.cpf, senha_nova)
+            
+            if sucesso:
+                tela_perfil.mostrar_mensagem_sucesso("Senha alterada com sucesso!")
+                self.abrir_tela_perfil(tela_perfil)
+            else:
+                tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {mensagem}")
+                
+        except Exception as e:
+            tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {str(e)}")
+
 
     def alterar_senha(self, tela_perfil, senha_atual, senha_nova, confirmar_senha):
         try:

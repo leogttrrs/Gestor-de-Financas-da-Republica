@@ -445,11 +445,3 @@ class ControladorDivida(AbstractControlador):
                                                                               pady=3)
             ttk.Label(container, text=evento.detalhes or "", style="Dividas.TLabel", wraplength=400,
                       justify='left').grid(row=row, column=5, sticky='w', padx=5, pady=3)
-
-    def recarregar_abas_secundarias(self):
-        if self.tela_dividas:
-            usuario_logado = self._controlador_sistema.usuario_logado
-            if self.tela_dividas.frame_avaliar_pagamentos:
-                self.carregar_pagamentos_pendentes(self.tela_dividas.frame_avaliar_pagamentos, usuario_logado)
-            if self.tela_dividas.frame_historico:
-                self.carregar_historico(self.tela_dividas.frame_historico, usuario_logado)
