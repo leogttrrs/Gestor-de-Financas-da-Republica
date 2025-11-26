@@ -26,7 +26,7 @@ class TelaOcorrencias:
         eh_admin = (usuario.tipo_usuario == 'administrador')
 
         if not eh_admin:
-            tk.Button(top_header, text="+ Nova Ocorrência",
+            tk.Button(top_header, text="Registrar Ocorrência",
                       bg="#0d6efd", fg="white", font=("Arial", 10, "bold"), relief="flat",
                       command=lambda: self._controlador_ocorrencia.abrir_tela_formulario()).pack(side="right", pady=10)
 
@@ -126,30 +126,12 @@ class TelaOcorrencias:
             acoes_frame = tk.Frame(row, bg="white")
             acoes_frame.grid(row=0, column=4, sticky="e", padx=pad, pady=pad)
 
-            #tk.Button(acoes_frame, text="👁", bg="#17a2b8", fg="white", bd=0, width=3, cursor="hand2",
-            #          command=lambda id=o.id: self._controlador_ocorrencia.abrir_tela_visualizacao(id)).pack(side="left", padx=2)
+            
 
             
             ttk.Button(acoes_frame, text="Visualizar", command=lambda id=o.id: self._controlador_ocorrencia.abrir_tela_visualizacao(id)).pack(side="left", padx=2)
 
-            #if eh_admin:
-            #    txt_status = "Reabrir" if o.status == "Finalizado" else "Finalizar"
-            #    bg_btn_status = "#ffc107" if o.status == "Finalizado" else "#198754"
-
-            #    tk.Button(acoes_frame, text="✓", bg=bg_btn_status, fg="white", bd=0, width=3, cursor="hand2",
-            #              command=lambda id=o.id: self._controlador_ocorrencia.alterar_status_ocorrencia(id)).pack(side="left",
-            #                                                                                                       padx=2)
-
-            #    tk.Button(acoes_frame, text="🗑", bg="#dc3545", fg="white", bd=0, width=3, cursor="hand2",
-            #              command=lambda id=o.id: self._controlador_ocorrencia.excluir_ocorrencia(id)).pack(side="left", padx=2)
-            #else:
-            #    tk.Button(acoes_frame, text="✏️", bg="#ffc107", fg="black", bd=0, width=3, cursor="hand2",
-            #              command=lambda obj=o: self._controlador_ocorrencia.abrir_tela_formulario(obj)).pack(side="left", padx=2)
-
-            #    tk.Button(acoes_frame, text="🗑", bg="#dc3545", fg="white", bd=0, width=3, cursor="hand2",
-            #              command=lambda id=o.id: self._controlador_ocorrencia.excluir_ocorrencia(id)).pack(side="left", padx=2)
-
-            #tk.Frame(self.linhas_frame, height=1, bg="#e0e0e0").pack(fill="x")
+            
 
     def mostrar_erro(self, msg):
         messagebox.showerror("Erro", msg)

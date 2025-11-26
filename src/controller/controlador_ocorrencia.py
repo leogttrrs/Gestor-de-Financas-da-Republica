@@ -28,19 +28,22 @@ class ControladorOcorrencia(AbstractControlador):
 
     def listar_ocorrencias(self):
         try:
-            todos = Ocorrencia.buscar_todos()
+            todas = Ocorrencia.buscar_todos()
             usuario = self._controlador_sistema.usuario_logado
 
             if not usuario:
                 return []
 
-            if usuario.tipo_usuario == 'administrador':
-                return todos
-            else:
-                return [o for o in todos if o.morador_id == usuario.id]
+            if usuario.tipo_usuario.lower() == "administrador":
+                return todas
+
+            if usuario.tipo_usuario.lower() == "morador":
+                return [o for o in todas if o.morador_id == usuario.id]
+
+            return []
 
         except Exception as e:
-            print(f"Erro ao listar: {e}")
+            print("Erro ao listar ocorrências:", e)
             return []
 
     def cadastrar_ocorrencia(self, dados: dict):

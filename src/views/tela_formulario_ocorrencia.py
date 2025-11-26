@@ -155,7 +155,7 @@ class TelaFormularioOcorrencia(tk.Toplevel):
         if self.ocorrencia_existente:
             ttk.Button(
                 botoes_frame,
-                text="Salvar alterações",
+                text="Salvar",
                 style="Salvar.TButton",
                 command=self._salvar
             ).pack(side="right")
@@ -163,7 +163,7 @@ class TelaFormularioOcorrencia(tk.Toplevel):
 
         ttk.Button(
             botoes_frame,
-            text="Salvar Ocorrência",
+            text="Salvar",
             style="Salvar.TButton",
             command=self._salvar
         ).pack(side="right")
@@ -207,7 +207,7 @@ class TelaFormularioOcorrencia(tk.Toplevel):
             if getattr(self._controlador_ocorrencia, "_tela_ocorrencia", None):
                 self._controlador_ocorrencia._tela_ocorrencia.atualizar_lista()
 
-            messagebox.showinfo("Sucesso", "Ocorrência salva com sucesso!", parent=self)
+            messagebox.showinfo("Sucesso", "Ocorrência cadastrada", parent=self)
             self.destroy()
 
         except Exception as e:
