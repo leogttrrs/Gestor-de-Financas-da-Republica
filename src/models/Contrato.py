@@ -172,6 +172,10 @@ class Contrato:
         db_manager = DatabaseManager()
         query = "SELECT * FROM contrato WHERE status = 'ativo' ORDER BY data_inicio DESC"
         resultados = db_manager.executar_query(query)
+
+        if not resultados:
+            return []
+
         return [Contrato.from_db_row(r) for r in resultados]
 
     @staticmethod

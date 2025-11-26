@@ -21,14 +21,17 @@ class Morador(Usuario):
     def buscar_com_contrato_ativo() -> List[Morador]:
         db_manager = DatabaseManager()
         query = """
-            SELECT DISTINCT u.* 
-            FROM usuario u
+            SELECT DISTINCT u.* FROM usuario u
             INNER JOIN contrato c ON u.id = c.morador_id
             WHERE u.tipo_usuario = 'morador' 
             AND c.status = 'ativo'
             ORDER BY u.nome
         """
         resultados = db_manager.executar_query(query)
+
+        if not resultados:
+            return []
+
         return [Morador(**r) for r in resultados]
 
     @staticmethod

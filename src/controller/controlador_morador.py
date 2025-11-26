@@ -1,6 +1,9 @@
 from .abstract_controlador import AbstractControlador
 from src.models.Morador import Morador
 from typing import List, Optional, Tuple
+from src.models.Contrato import Contrato
+from ..views.tela_morador import TelaMoradores
+
 
 class ControladorMorador(AbstractControlador):
     def __init__(self, controlador_sistema):
@@ -8,19 +11,16 @@ class ControladorMorador(AbstractControlador):
         self.tela_moradores = None
     
     def abre_tela(self, parent_view=None):
-            # 1. Atualiza lista de moradores (somente ativos/agendados)
         self.moradores = Morador.buscar_com_contrato_ativo()
 
         self.tela_moradores = TelaMoradores(
-                parent_view.content_frame,               # onde a tela será renderizada
-                self._controlador_sistema, # para navegação
-                self                    # referência ao controlador
+                parent_view.content_frame,
+                self._controlador_sistema,
+                self
             )
 
-        # 3. Atualiza a exibição antes de mostrar
         self.tela_moradores.atualizar_lista()
 
-        # 4. Define a tela atual no sistema
         self._controlador_sistema.tela_atual = self.tela_moradores
         self.tela_moradores.mostrar()
         
@@ -56,57 +56,55 @@ class ControladorMorador(AbstractControlador):
         except Exception as e:
             print(f"Erro ao listar moradores não alocados: {e}")
             return []
-        
+
     def listar_moradores_alocados(self) -> List[dict]:
         try:
             moradores = Morador.buscar_com_contrato_ativo()
-            lista_moradores = []
+            if not moradores:
+                return []
+
+            lista_moradores_view = []
+            todos_contratos_ativos = Contrato.buscar_ativos() or []
+
+            mapa_contratos = {c.morador_id: c for c in todos_contratos_ativos}
 
             for morador in moradores:
+                contrato = mapa_contratos.get(morador.id)
 
-                
-                contratos_ativos = Contrato.buscar_ativos()
+                quarto_numero = 'N/A'
+                if contrato and contrato.quarto:
+                    quarto_numero = contrato.quarto.numero_quarto
 
-                contrato = next(
-                    (c for c in contratos_ativos if c.morador_id == morador.id),
-                    None
-                )
-
-                # Pega o número do quarto
-                quarto_numero = contrato.quarto.numero_quarto if contrato and contrato.quarto else 'N/A'
-
-                lista_moradores.append({
+                lista_moradores_view.append({
                     'morador_nome': morador.nome,
                     'email': morador.email,
                     'telefone': morador.telefone,
                     'quarto_numero': quarto_numero
                 })
 
-            return lista_moradores
+            return lista_moradores_view
 
         except Exception as e:
             print(f"Erro ao listar moradores alocados: {e}")
             return []
 
     def cadastrar_morador(self, dados: dict):
-        try:
-            cpf = dados["cpf"]
+        cpf = dados["cpf"]
 
-            # prevenir duplicidade
-            if Morador.buscar_por_cpf(cpf):
-                return False, "Já existe um morador cadastrado com este CPF."
+        if Morador.buscar_por_cpf(cpf):
+            return False, "Já existe um morador cadastrado com este CPF."
 
-            novo = Morador(
-                cpf=dados["cpf"],
-                nome=dados["nome"],
-                email=dados["email"],
-                telefone=dados["telefone"],
-                senhaCriptografada=dados["senha"]
-            )
+        novo = Morador(
+            cpf=dados["cpf"],
+            nome=dados["nome"],
+            email=dados["email"],
+            telefone=dados["telefone"],
+            senhaCriptografada=dados["senha"]
+        )
 
-            novo.salvar()
+        novo.salvar()
 
-            return True, novo
+        return True
 
     def abrir_tela_perfil(self, tela_perfil):
         if self._controlador_sistema.usuario_logado:
@@ -156,46 +154,6 @@ class ControladorMorador(AbstractControlador):
                 
         except Exception as e:
             tela_perfil.mostrar_mensagem_erro(f"Erro ao atualizar perfil: {str(e)}")
-
-    def alterar_senha(self, tela_perfil, senha_atual, senha_nova, confirmar_senha):
-        try:
-            usuario_logado = self._controlador_sistema.usuario_logado
-            if not usuario_logado:
-                tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
-                return
-            
-            if not senha_atual or not senha_nova or not confirmar_senha:
-                tela_perfil.mostrar_mensagem_erro("Todos os campos são obrigatórios")
-                return
-            
-            if senha_nova != confirmar_senha:
-                tela_perfil.mostrar_mensagem_erro("A nova senha e a confirmação não coincidem")
-                return
-            
-            if len(senha_nova) < 6:
-                tela_perfil.mostrar_mensagem_erro("A nova senha deve ter pelo menos 6 caracteres")
-                return
-            
-            morador = Morador.buscar_por_cpf(usuario_logado.cpf)
-            if not morador:
-                tela_perfil.mostrar_mensagem_erro("Morador não encontrado")
-                return
-            
-            if not morador.verificar_senha(senha_atual):
-                tela_perfil.mostrar_mensagem_erro("Senha atual incorreta")
-                return
-            
-            sucesso, mensagem = Morador.alterar_senha(usuario_logado.cpf, senha_nova)
-            
-            if sucesso:
-                tela_perfil.mostrar_mensagem_sucesso("Senha alterada com sucesso!")
-                self.abrir_tela_perfil(tela_perfil)
-            else:
-                tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {mensagem}")
-                
-        except Exception as e:
-            tela_perfil.mostrar_mensagem_erro(f"Erro ao alterar senha: {str(e)}")
-
 
     def alterar_senha(self, tela_perfil, senha_atual, senha_nova, confirmar_senha):
         try:
