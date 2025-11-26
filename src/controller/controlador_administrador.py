@@ -2,6 +2,7 @@ from .abstract_controlador import AbstractControlador
 from src.models.Administrador import Administrador
 from src.models.Republica import Republica
 from typing import Tuple, Optional
+from tkinter import messagebox
 
 
 class ControladorAdministrador(AbstractControlador):
@@ -115,47 +116,39 @@ class ControladorAdministrador(AbstractControlador):
         tela_perfil.mostrar_formulario_mudar_senha()
 
     def excluir_perfil_admin(self, tela_perfil):
-        from tkinter import messagebox
-        
         resposta = messagebox.askyesno(
-            "Confirmar Exclusão", 
-            "ATENÇÃO!\n\n"
+            "⚠️ RESETAR SISTEMA INTEIRO",
+            "ATENÇÃO MUITO CUIDADO!\n\n"
             "Esta ação irá:\n"
             "• Excluir seu perfil de administrador\n"
-            "• Apagar TODOS os dados da república\n"
-            "• Remover todos os moradores, quartos e contratos\n"
-            "• Esta ação é IRREVERSÍVEL!\n\n"
-            "Tem certeza que deseja continuar?",
+            "• Apagar TODOS os dados (Moradores, Contratos, Dívidas, Alertas)\n"
+            "• O sistema voltará ao estado inicial (zero)\n\n"
+            "Tem certeza absoluta que deseja continuar?",
             icon='warning'
         )
 
         if not resposta:
             return
-            
+
         try:
             usuario_logado = self._controlador_sistema.usuario_logado
             if not usuario_logado:
                 tela_perfil.mostrar_mensagem_erro("Usuário não está logado")
                 return
-            
-            admin = Administrador.buscar_por_cpf(usuario_logado.cpf)
-            if not admin:
-                tela_perfil.mostrar_mensagem_erro("Administrador não encontrado")
-                return
-            
-            sucesso, mensagem = admin.excluir()
-            
+            sucesso = Administrador.limpar_banco_dados()
+
             if sucesso:
-                messagebox.showinfo("Perfil Excluído", "Perfil excluído com sucesso. Retornando ao login...")
+                messagebox.showinfo("Sistema Resetado",
+                                    "Todos os dados foram excluídos com sucesso.\nO sistema será reiniciado.")
+
                 self._controlador_sistema.usuario_logado = None
                 if hasattr(tela_perfil, 'on_logout') and tela_perfil.on_logout:
                     tela_perfil.on_logout()
             else:
-                tela_perfil.mostrar_mensagem_erro(f"Erro ao excluir perfil: {mensagem}")
-                
+                tela_perfil.mostrar_mensagem_erro("Ocorreu um erro técnico ao tentar limpar o banco de dados.")
+
         except Exception as e:
             tela_perfil.mostrar_mensagem_erro(f"Erro inesperado ao excluir perfil: {str(e)}")
-
     def atualizar_perfil(self, tela_perfil, dados):
         try:
             usuario_logado = self._controlador_sistema.usuario_logado

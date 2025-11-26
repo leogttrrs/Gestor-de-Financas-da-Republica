@@ -1,3 +1,5 @@
+from tkinter import messagebox
+
 from .abstract_controlador import AbstractControlador
 from src.models.Morador import Morador
 from typing import List, Optional, Tuple
@@ -28,26 +30,93 @@ class ControladorMorador(AbstractControlador):
     def buscar_morador_por_id(self, morador_id: int) -> Optional['Morador']:
         return Morador.buscar_por_id(morador_id)
     
-    def _atualizar_lista_moradores(self) -> List[dict]:
-        contratos_ativos = self.listar_contratos(filtro_status='ativo')
-        contratos_agendados = self.listar_contratos(filtro_status='agendado')
-        contratos = contratos_ativos + contratos_agendados
+    def atualizar_lista_moradores(self):
+        moradores = Morador.buscar_todos()
+        if self.tela_moradores:
+            self.tela_moradores.atualizar_tabela(moradores)
 
-        lista_moradores = []
+    def excluir_morador(self, morador_id):
+        # 1. Verifica contrato ativo
+        if Morador.tem_contrato_ativo(morador_id):
+            messagebox.showwarning(
+                "Ação Negada",
+                "Não é possível excluir este morador pois ele possui um CONTRATO ATIVO.\n\n"
+                "Encerre o contrato antes de tentar excluir."
+            )
+            return
 
-        for contrato in contratos:
-            morador = contrato.morador
-            quarto = contrato.quarto
+        # 2. Confirmação
+        if messagebox.askyesno("Confirmar Exclusão", "Tem certeza que deseja excluir este morador permanentemente?"):
+            if Morador.excluir(morador_id):
+                messagebox.showinfo("Sucesso", "Morador excluído com sucesso.")
+                # Atualiza a tela se ela estiver aberta
+                if self.tela_moradores:
+                    self.tela_moradores.atualizar_lista()
+            else:
+                messagebox.showerror("Erro", "Erro ao excluir morador.")
 
-            lista_moradores.append({
-                'morador_nome': morador.nome if morador else 'N/A',
-                'email': morador.email if morador else 'N/A',
-                'telefone': morador.telefone if morador else 'N/A',
-                'quarto_numero': quarto.numero_quarto if quarto else 'N/A'
-            })
+    def atualizar_morador_existente(self, morador_id, dados_novos):
+        try:
+            morador = Morador.buscar_por_id(morador_id)
+            if not morador:
+                messagebox.showerror("Erro", "Morador não encontrado.")
+                return False
 
-        return lista_moradores
-        
+            morador.nome = dados_novos['nome']
+            morador.email = dados_novos['email']
+            morador.telefone = dados_novos['telefone']
+
+            sucesso, mensagem = morador.atualizar()
+
+            if sucesso:
+                messagebox.showinfo("Sucesso", "Dados atualizados!")
+                if self.tela_moradores:
+                    self.tela_moradores.atualizar_lista()
+                return True
+            else:
+                messagebox.showerror("Erro", mensagem)
+                return False
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao atualizar: {str(e)}")
+            return False
+
+    def listar_todos_detalhado(self) -> List[dict]:
+        try:
+            usuario_logado = self._controlador_sistema.usuario_logado
+
+            if usuario_logado and usuario_logado.tipo_usuario == 'administrador':
+                todos_moradores = Morador.buscar_todos()
+            else:
+                todos_moradores = Morador.buscar_com_contrato_ativo()
+
+            if not todos_moradores:
+                return []
+
+            lista_formatada = []
+
+            contratos_ativos = Contrato.buscar_ativos() or []
+            mapa_contratos = {c.morador_id: c for c in contratos_ativos}
+
+            for m in todos_moradores:
+                contrato = mapa_contratos.get(m.id)
+                quarto_num = contrato.quarto.numero_quarto if contrato and contrato.quarto else "-"
+
+                if usuario_logado.tipo_usuario == 'administrador' or quarto_num != "-":
+                    lista_formatada.append({
+                        'id': m.id,
+                        'nome': m.nome,
+                        'email': m.email,
+                        'telefone': m.telefone,
+                        'cpf': m.cpf,
+                        'quarto_numero': quarto_num
+                    })
+
+            return lista_formatada
+
+        except Exception as e:
+            print(f"Erro ao listar detalhado: {e}")
+            return []
 
     def listar_moradores_nao_alocados(self) -> List[dict]:
         try:
@@ -55,37 +124,6 @@ class ControladorMorador(AbstractControlador):
             return [{'id': m.id, 'nome': m.nome, 'cpf': m.cpf} for m in moradores]
         except Exception as e:
             print(f"Erro ao listar moradores não alocados: {e}")
-            return []
-
-    def listar_moradores_alocados(self) -> List[dict]:
-        try:
-            moradores = Morador.buscar_com_contrato_ativo()
-            if not moradores:
-                return []
-
-            lista_moradores_view = []
-            todos_contratos_ativos = Contrato.buscar_ativos() or []
-
-            mapa_contratos = {c.morador_id: c for c in todos_contratos_ativos}
-
-            for morador in moradores:
-                contrato = mapa_contratos.get(morador.id)
-
-                quarto_numero = 'N/A'
-                if contrato and contrato.quarto:
-                    quarto_numero = contrato.quarto.numero_quarto
-
-                lista_moradores_view.append({
-                    'morador_nome': morador.nome,
-                    'email': morador.email,
-                    'telefone': morador.telefone,
-                    'quarto_numero': quarto_numero
-                })
-
-            return lista_moradores_view
-
-        except Exception as e:
-            print(f"Erro ao listar moradores alocados: {e}")
             return []
 
     def cadastrar_morador(self, dados: dict):
@@ -103,8 +141,7 @@ class ControladorMorador(AbstractControlador):
         )
 
         novo.salvar()
-
-        return True
+        return True, "Morador cadastrado com sucesso!"
 
     def abrir_tela_perfil(self, tela_perfil):
         if self._controlador_sistema.usuario_logado:

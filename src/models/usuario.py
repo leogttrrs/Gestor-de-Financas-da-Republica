@@ -112,6 +112,9 @@ class Usuario(ABC):
             self.__telefone
         )
 
+    def atualizar(self) -> Tuple[bool, str]:
+        return Usuario.atualizar_usuario(self)
+
     @staticmethod
     def salvar_usuario(usuario: 'Usuario') -> Tuple[bool, str]:
         try:
