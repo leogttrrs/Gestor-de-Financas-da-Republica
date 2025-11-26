@@ -69,15 +69,106 @@ class TelaFormularioOcorrencia(tk.Toplevel):
         botoes_frame = ttk.Frame(frame, style="Form.TFrame")
         botoes_frame.pack(fill="x", pady=(10, 0))
 
-        if not self.visualizar_apenas:
-            btn_salvar = ttk.Button(botoes_frame, text="Salvar Ocorrência",
-                                    style="Salvar.TButton", command=self._salvar)
-            btn_salvar.pack(side="right")
-            btn_cancelar = ttk.Button(botoes_frame, text="Cancelar", command=self.destroy)
-            btn_cancelar.pack(side="right", padx=10)
-        else:
-            btn_fechar = ttk.Button(botoes_frame, text="Fechar Visualização", command=self.destroy)
-            btn_fechar.pack(side="right")
+        
+        #btn_salvar = ttk.Button(botoes_frame, text="Salvar Ocorrência",
+        #                            style="Salvar.TButton", command=self._salvar)
+        #btn_salvar.pack(side="right")
+
+        usuario = self._controlador_ocorrencia._controlador_sistema.usuario_logado
+        eh_admin = (usuario.tipo_usuario == 'administrador')
+
+        if self.visualizar_apenas and self.ocorrencia_existente:
+
+            BTN_WIDTH = 14 
+            info_frame = ttk.Frame(frame)
+            info_frame.pack(fill="x", pady=(0, 15))
+
+            ttk.Label(
+                info_frame,
+                text=f"Morador: {self.ocorrencia_existente.morador.nome}",
+                font=('Arial', 10, 'bold')
+            ).pack(anchor="w", pady=2)
+
+            data_str = (
+                self.ocorrencia_existente.data.strftime("%d/%m/%Y %H:%M")
+                if hasattr(self.ocorrencia_existente.data, "strftime")
+                else str(self.ocorrencia_existente.data)
+            )
+
+            ttk.Label(
+                info_frame,
+                text=f"Data de criação: {data_str}",
+                font=('Arial', 10)
+            ).pack(anchor="w", pady=2)
+
+
+        
+            if eh_admin:
+                status_atual = self.ocorrencia_existente.status
+                bg_btn_status = "#ffc107" if status_atual == "Finalizado" else "#198754"
+
+                tk.Button(
+                    botoes_frame,
+                    text="Marcar como pendente" if status_atual == "Finalizado" else "Marcar como finalizado",
+                    bg=bg_btn_status,
+                    fg="white",
+                    cursor="hand2",
+                    padx=16,
+                    width=BTN_WIDTH,
+                    bd=0,
+                    command=lambda oid=self.ocorrencia_existente.id:
+                        self._controlador_ocorrencia.alterar_status_ocorrencia(oid)
+                ).pack(side="left", padx=5)
+
+
+         
+            tk.Button(
+                botoes_frame,
+                text="Editar",
+                bg="#0d6efd",      
+                fg="white",
+                cursor="hand2",
+                width=BTN_WIDTH,
+                bd=0,
+                command=lambda occ=self.ocorrencia_existente:
+                    self._controlador_ocorrencia.abrir_tela_formulario(occ)
+            ).pack(side="left", padx=5)
+
+
+            
+            tk.Button(
+                botoes_frame,
+                text="Excluir",
+                bg="#dc3545",     
+                fg="white",
+                cursor="hand2",
+                bd=0,
+                width=BTN_WIDTH,
+                command=lambda oid=self.ocorrencia_existente.id:
+                    self._controlador_ocorrencia.excluir_ocorrencia(oid)
+            ).pack(side="left", padx=5)
+
+            return  
+
+
+
+        if self.ocorrencia_existente:
+            ttk.Button(
+                botoes_frame,
+                text="Salvar alterações",
+                style="Salvar.TButton",
+                command=self._salvar
+            ).pack(side="right")
+            return
+
+        ttk.Button(
+            botoes_frame,
+            text="Salvar Ocorrência",
+            style="Salvar.TButton",
+            command=self._salvar
+        ).pack(side="right")
+
+                    
 
     def _carregar_dados(self):
         if self.ocorrencia_existente:
@@ -94,7 +185,7 @@ class TelaFormularioOcorrencia(tk.Toplevel):
             descricao = self.descricao_text.get("1.0", "end").strip()
 
             if not titulo or not descricao:
-                messagebox.showerror("Erro", "Todos os campos são obrigatórios.", parent=self)
+                messagebox.showerror("Erro", "Campos obrigatórios não foram preenchidos", parent=self)
                 return
 
             dados = {

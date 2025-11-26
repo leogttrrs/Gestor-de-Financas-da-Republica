@@ -45,18 +45,33 @@ class ControladorOcorrencia(AbstractControlador):
 
     def cadastrar_ocorrencia(self, dados: dict):
         try:
-            morador = dados.get("morador")
-            titulo = dados.get("titulo", "").strip()
-            descricao = dados.get("descricao", "").strip()
+            if not self.usuario_pode_cadastrar():
+                return "Apenas moradores podem cadastrar ocorrências."
 
-            if not morador or not titulo or not descricao:
-                return "Campos obrigatórios faltando."
+            valido, msg = self.validar_campos(dados)
+            if not valido:
+                return msg
+
+            morador = dados.get("morador")
+            titulo = dados.get("titulo").strip()
+            descricao = dados.get("descricao").strip()
+
+            if not morador:
+                return "Morador é obrigatório."
 
             data_atual = datetime.now().strftime("%Y-%m-%d")
-            ocorrencia = Ocorrencia(morador=morador, titulo=titulo, descricao=descricao, data=data_atual)
+            ocorrencia = Ocorrencia(
+                morador=morador,
+                titulo=titulo,
+                descricao=descricao,
+                data=data_atual
+            )
+
             return ocorrencia.salvar()
+
         except Exception as e:
             return str(e)
+
 
     def atualizar_ocorrencia(self, ocorrencia_id: int, dados: dict) -> bool:
         try:
@@ -90,8 +105,8 @@ class ControladorOcorrencia(AbstractControlador):
     def abrir_tela_formulario(self, ocorrencia_existente=None):
         usuario_logado = self._controlador_sistema.usuario_logado
 
-        if not usuario_logado or usuario_logado.tipo_usuario != 'morador':
-            self.mostrarMensagemErro("Apenas moradores podem criar ou editar ocorrências.")
+        if not usuario_logado:
+            self.mostrarMensagemErro("Apenas moradores podem criar  ocorrências.")
             return
 
         parent = None
@@ -153,13 +168,20 @@ class ControladorOcorrencia(AbstractControlador):
             else:
                 tk.messagebox.showerror("Erro", msg)
 
-    def validarCampos(self, dados: dict) -> (bool, str):
-        if not dados.get('titulo') or str(dados.get('titulo')).strip() == "":
-            return False, "Campo 'titulo' é obrigatório"
-        if not dados.get('descricao') or str(dados.get('descricao')).strip() == "":
-            return False, "Campo 'descricao' é obrigatório"
+    def validar_campos(self, dados: dict) -> (bool, str):
+        titulo = str(dados.get('titulo', '')).strip()
+        descricao = str(dados.get('descricao', '')).strip()
+
+        # Se qualquer um estiver vazio → erro único
+        if not titulo or not descricao:
+            return False, "Campos obrigatórios não foram preenchidos"
+
         return True, ""
 
     def usuario_pode_alterar_status(self):
         usuario = self._controlador_sistema.usuario_logado
         return usuario and usuario.tipo_usuario.lower() == "administrador"
+    
+    def usuario_pode_cadastrar(self):
+        usuario = self._controlador_sistema.usuario_logado
+        return usuario and usuario.tipo_usuario.lower() == "morador"
