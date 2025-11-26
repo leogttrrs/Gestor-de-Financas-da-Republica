@@ -13,22 +13,22 @@ def seed_moradores():
     print("="*60)
     
     moradores_data = [
-        {"nome": "João Silva", "cpf": "11111111111", "email": "joao.silva@email.com",
-         "senha": "senha123", "telefone": "11987654321"},
-        {"nome": "Maria Santos", "cpf": "22222222222", "email": "maria.santos@email.com",
-         "senha": "senha123", "telefone": "11987654322"},
-        {"nome": "Pedro Oliveira", "cpf": "33333333333", "email": "pedro.oliveira@email.com",
-         "senha": "senha123", "telefone": "11987654323"},
-        {"nome": "Ana Costa", "cpf": "44444444444", "email": "ana.costa@email.com",
-         "senha": "senha123", "telefone": "11987654324"},
-        {"nome": "Carlos Ferreira", "cpf": "55555555555", "email": "carlos.ferreira@email.com",
-         "senha": "senha123", "telefone": "11987654325"},
-        {"nome": "Juliana Almeida", "cpf": "66666666666", "email": "juliana.almeida@email.com",
-         "senha": "senha123", "telefone": "11987654326"},
-        {"nome": "Ricardo Souza", "cpf": "77777777777", "email": "ricardo.souza@email.com",
-         "senha": "senha123", "telefone": "11987654327"},
-        {"nome": "Fernanda Lima", "cpf": "88888888888", "email": "fernanda.lima@email.com",
-         "senha": "senha123", "telefone": "11987654328"},
+        {"nome": "João Silva", "cpf": "12345678909", "email": "joao.silva@email.com",
+         "senha": "Joao123", "telefone": "11987654321"},
+        {"nome": "Maria Santos", "cpf": "98765432100", "email": "maria.santos@email.com",
+         "senha": "Maria123", "telefone": "11987654322"},
+        {"nome": "Pedro Oliveira", "cpf": "11122233344", "email": "pedro.oliveira@email.com",
+         "senha": "Pedro123", "telefone": "11987654323"},
+        {"nome": "Ana Costa", "cpf": "55566677788", "email": "ana.costa@email.com",
+         "senha": "Ana1234", "telefone": "11987654324"},
+        {"nome": "Carlos Ferreira", "cpf": "99988877766", "email": "carlos.ferreira@email.com",
+         "senha": "Carlos123", "telefone": "11987654325"},
+        {"nome": "Juliana Almeida", "cpf": "44455566677", "email": "juliana.almeida@email.com",
+         "senha": "Juliana123", "telefone": "11987654326"},
+        {"nome": "Ricardo Souza", "cpf": "77788899900", "email": "ricardo.souza@email.com",
+         "senha": "Ricardo123", "telefone": "11987654327"},
+        {"nome": "Fernanda Lima", "cpf": "33344455566", "email": "fernanda.lima@email.com",
+         "senha": "Fernanda123", "telefone": "11987654328"},
     ]
     
     moradores_criados = 0

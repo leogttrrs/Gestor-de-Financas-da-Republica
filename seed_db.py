@@ -14,14 +14,14 @@ def popular_banco():
         # --- 1. CRIAR USUÁRIOS (ADMIN E MORADORES) ---
         print("\n[PASSO 1/5] Criando usuários...")
         usuarios_para_criar = [
-            {'cpf': '1', 'nome': 'Admin Padrão', 'email': 'admin@rep.com', 'telefone': '111111111',
-             'senha': '1', 'tipo': 'administrador'},
-            {'cpf': '11122233344', 'nome': 'João da Silva', 'email': 'joao@email.com', 'telefone': '222222222',
-             'senha': 'senha123', 'tipo': 'morador'},
-            {'cpf': '55566677788', 'nome': 'Maria Oliveira', 'email': 'maria@email.com', 'telefone': '333333333',
-             'senha': 'senha123', 'tipo': 'morador'},
-            {'cpf': '99988877766', 'nome': 'Carlos Pereira', 'email': 'carlos@email.com', 'telefone': '444444444',
-             'senha': 'senha123', 'tipo': 'morador'}
+            {'cpf': '12345678909', 'nome': 'Admin Padrão', 'email': 'admin@republica.com', 'telefone': '11987654321',
+             'senha': 'Admin123', 'tipo': 'administrador'},
+            {'cpf': '98765432100', 'nome': 'João da Silva', 'email': 'joao.silva@email.com', 'telefone': '11912345678',
+             'senha': 'Joao123', 'tipo': 'morador'},
+            {'cpf': '11122233344', 'nome': 'Maria Oliveira', 'email': 'maria.oliveira@email.com', 'telefone': '11923456789',
+             'senha': 'Maria123', 'tipo': 'morador'},
+            {'cpf': '55566677788', 'nome': 'Carlos Pereira', 'email': 'carlos.pereira@email.com', 'telefone': '11934567890',
+             'senha': 'Carlos123', 'tipo': 'morador'}
         ]
 
         usuarios_ids = {}
