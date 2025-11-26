@@ -93,9 +93,7 @@ class MenuAdministrador(MenuLateral):
     
     def _definir_opcoes_admin(self):
         opcoes = [
-            ("👁 Visão Geral", lambda: self._navegar("dashboard")),
             ("👥 Moradores", lambda: self._navegar("moradores")),
-            ("🏠Republica", lambda: self._navegar("republica")),
             ("🛏 Quartos", lambda: self._navegar("quartos")),
             ("📋 Contratos", lambda: self._navegar("contratos")),
             ("💰 Dívidas", lambda: self._navegar("dividas")),
@@ -123,7 +121,6 @@ class MenuMorador(MenuLateral):
 
         if tem_contrato_ativo:
             opcoes = [
-                ("🏠 Visão Geral", lambda: self._navegar("dashboard")),
                 ("👥 Moradores", lambda: self._navegar("moradores")),
                 ("🛏 Quartos", lambda: self._navegar("quartos")),
                 ("💰 Dívidas", lambda: self._navegar("dividas")),
