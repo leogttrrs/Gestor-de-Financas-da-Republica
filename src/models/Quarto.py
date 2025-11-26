@@ -7,9 +7,9 @@ from .Republica import Republica
 class Quarto:
     def __init__(self, numero_quarto: int, tamanho: int, republica: Republica, id: Optional[int] = None):
         self.__id = id
-        self.__numero_quarto = numero_quarto
-        self.__tamanho = tamanho
-        self.__republica = republica
+        self.numero_quarto = numero_quarto
+        self.tamanho = tamanho
+        self.republica = republica
 
     @classmethod
     def from_db_row(cls, row: dict) -> 'Quarto':
