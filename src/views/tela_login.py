@@ -27,8 +27,6 @@ class TelaLogin(ComponenteBase):
         self.entry_cpf = InputsPadrao.input_padrao(fields_frame, "Seu CPF", largura=30, altura=8)
         self.entry_senha = InputsPadrao.input_padrao(fields_frame, "Sua senha", largura=30, altura=8, tipo_senha=True)
 
-        TextosPadrao.link_azul(fields_frame, "Esqueceu sua senha?", self._esqueceu_senha)
-
         self.btn_entrar = BotoesPadrao.botao_azul(fields_frame, "Entrar", self._fazer_login, altura=10)
 
         # Container para links de cadastro usando componentes padronizados

@@ -87,11 +87,6 @@ class TelaLogin(ComponenteBase):
         self.entry_senha.bind("<FocusOut>", self._restaurar_placeholder_senha)
         self.entry_senha.configure(foreground="gray", show="")
         
-        esqueceu_label = ttk.Label(fields_frame, text="Esqueceu sua senha?", 
-                                 font=("Arial", 10), foreground="#007bff", cursor="hand2", background="white")
-        esqueceu_label.pack(anchor="w", pady=(0, 15))
-        esqueceu_label.bind("<Button-1>", self._esqueceu_senha)
-        
         self.btn_entrar = ttk.Button(fields_frame, text="Entrar", command=self._fazer_login,
                                    style="Primary.TButton")
         self.btn_entrar.pack(fill="x", ipady=10)
