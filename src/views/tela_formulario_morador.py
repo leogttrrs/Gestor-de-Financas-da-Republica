@@ -101,6 +101,8 @@ class TelaFormularioMorador(Toplevel):
 
         if not sucesso:
             messagebox.showerror("Erro", resultado)
+            self.lift()
+            self.focus_force()
             return
 
         messagebox.showinfo("Sucesso", "Morador cadastrado com sucesso!")

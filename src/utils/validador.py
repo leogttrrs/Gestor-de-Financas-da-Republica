@@ -108,7 +108,7 @@ class Validador:
         telefone_limpo = re.sub(r'[^0-9]', '', telefone)
         
         if len(telefone_limpo) not in [10, 11] or not telefone_limpo.isdigit():
-            return "Telefone inválido."
+            return "Telefone inválido. Deve conter 10 ou 11 dígitos numéricos. "
 
         return telefone
 

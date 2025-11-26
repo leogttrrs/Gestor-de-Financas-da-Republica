@@ -5,6 +5,8 @@ from src.models.Morador import Morador
 from typing import List, Optional, Tuple
 from src.models.Contrato import Contrato
 from ..views.tela_morador import TelaMoradores
+from src.utils.validador import Validador
+
 
 
 class ControladorMorador(AbstractControlador):
@@ -126,29 +128,45 @@ class ControladorMorador(AbstractControlador):
             print(f"Erro ao listar moradores não alocados: {e}")
             return []
 
-    def cadastrar_morador(self, dados: dict):
-        from src.utils.validador import Validador
-        
-        cpf = dados["cpf"]
+    def cadastrar_morador(self, dados: dict):        
+        try:
+            cpf = dados.get("cpf", "").strip()
+            nome = dados.get("nome", "").strip()
+            email = dados.get("email", "").strip()
+            telefone = dados.get("telefone", "").strip()
+            senha = dados.get("senha", "").strip()
+            
+            if Morador.buscar_por_cpf(cpf):
+                return False, "Já existe um morador cadastrado com este CPF."
+            
+            valido, mensagem = Validador.validar_dados_usuario(cpf, nome, email, telefone)
+            if not valido:
+                return False, mensagem
+            
+            valida_senha, mensagem_senha = Validador.validar_senha(senha)
+            if not valida_senha:
+                return False, mensagem_senha
 
-        if Morador.buscar_por_cpf(cpf):
-            return False, "Já existe um morador cadastrado com este CPF."
-        
-        # Validar senha antes de criar o morador
-        valida_senha, mensagem_senha = Validador.validar_senha(dados["senha"])
-        if not valida_senha:
-            return False, mensagem_senha
+            novo = Morador(
+                cpf=cpf,
+                nome=nome,
+                email=email,
+                telefone=telefone,
+                senhaCriptografada=senha
+            )
 
-        novo = Morador(
-            cpf=dados["cpf"],
-            nome=dados["nome"],
-            email=dados["email"],
-            telefone=dados["telefone"],
-            senhaCriptografada=dados["senha"]
-        )
-
-        novo.salvar()
-        return True, "Morador cadastrado com sucesso!"
+            novo.salvar()
+            return True, "Morador cadastrado com sucesso!"
+            
+        except ValueError as e:
+            return False, str(e).replace("Erro de validação ao salvar morador: ", "")
+        except RuntimeError as e:
+            erro_msg = str(e)
+            if "UNIQUE constraint failed" in erro_msg:
+                return False, "CPF já cadastrado no sistema."
+            return False, str(e)
+        except Exception as e:
+            return False, f"Erro inesperado ao cadastrar morador: {str(e)}"
 
     def abrir_tela_perfil(self, tela_perfil):
         if self._controlador_sistema.usuario_logado:
