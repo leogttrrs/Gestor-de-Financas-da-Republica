@@ -66,10 +66,10 @@ class TelaComMenuLateral(ComponenteBase):
                 self.controlador_sistema.controlador_contrato.abre_tela(self)
             case "dividas":
                 self.controlador_sistema.controlador_divida.abre_tela(self)
-            case "recorrencias":
-                self.controlador_sistema.controlador_recorrencia.abre_tela(self)
             case "ocorrencias":
                 self.controlador_sistema.controlador_ocorrencia.abre_tela(self)
+            case "alertas":
+                self.controlador_sistema.controlador_alerta.abre_tela(self)
             case _:
                 self._mostrar_em_desenvolvimento(secao)
     
@@ -119,8 +119,8 @@ class TelaComMenuLateral(ComponenteBase):
     
     def _mostrar_dividas(self):
         self._mostrar_em_desenvolvimento("Dívidas")
-    
-    
+
+
     def _mostrar_alertas(self):
         self._mostrar_em_desenvolvimento("Alertas")
     

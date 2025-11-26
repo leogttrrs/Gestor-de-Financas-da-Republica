@@ -52,6 +52,10 @@ class ControladorSistema:
         return self.__controlador_contrato
 
     @property
+    def controlador_alerta(self):
+        return self.__controlador_alerta
+
+    @property
     def controlador_divida(self):
         return self.__controlador_divida
 
