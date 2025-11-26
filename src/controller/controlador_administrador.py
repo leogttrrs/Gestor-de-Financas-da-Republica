@@ -11,8 +11,16 @@ class ControladorAdministrador(AbstractControlador):
 
     def cadastrar_administrador(self, cpf: str, nome: str, email: str, telefone: str, senha: str) -> Tuple[bool, str]:
         try:
+            from src.utils.validador import Validador
+            
             if Administrador.existe_algum(tipo_usuario='administrador'):
                 return False, "Já existe um administrador no sistema. Não é possível criar outro."
+            
+            # Validar senha antes de criar o administrador
+            valida_senha, mensagem_senha = Validador.validar_senha(senha)
+            if not valida_senha:
+                return False, mensagem_senha
+            
             admin_para_salvar = Administrador(cpf=cpf, nome=nome, email=email, telefone=telefone,
                                               senhaCriptografada=None)
 
@@ -57,6 +65,8 @@ class ControladorAdministrador(AbstractControlador):
 
     def editar_administrador(self, admin_id: int, cpf: str, nome: str, email: str, telefone: str, senha: str = None) -> Tuple[bool, str]:
         try:
+            from src.utils.validador import Validador
+            
             admin = self.buscar_administrador_por_id(admin_id)
             if not admin:
                 return False, "Administrador não encontrado"
@@ -71,6 +81,10 @@ class ControladorAdministrador(AbstractControlador):
                 return False, mensagem
             
             if senha:
+                # Validar senha antes de atualizar
+                valida_senha, mensagem_senha = Validador.validar_senha(senha)
+                if not valida_senha:
+                    return False, mensagem_senha
                 admin.senhaCriptografada = admin.hash_senha(senha)
             
             sucesso, mensagem = admin.atualizar()

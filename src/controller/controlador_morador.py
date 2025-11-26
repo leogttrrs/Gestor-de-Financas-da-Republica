@@ -127,10 +127,17 @@ class ControladorMorador(AbstractControlador):
             return []
 
     def cadastrar_morador(self, dados: dict):
+        from src.utils.validador import Validador
+        
         cpf = dados["cpf"]
 
         if Morador.buscar_por_cpf(cpf):
             return False, "Já existe um morador cadastrado com este CPF."
+        
+        # Validar senha antes de criar o morador
+        valida_senha, mensagem_senha = Validador.validar_senha(dados["senha"])
+        if not valida_senha:
+            return False, mensagem_senha
 
         novo = Morador(
             cpf=dados["cpf"],

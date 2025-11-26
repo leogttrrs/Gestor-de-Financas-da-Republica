@@ -5,15 +5,15 @@ from typing import Tuple
 
 
 class Validador:
-    VALIDAR_CPF = False
-    VALIDAR_DATA_NASCIMENTO = False
-    VALIDAR_NOME = False
-    VALIDAR_TELEFONE = False
-    VALIDAR_EMAIL = False
-    VALIDAR_SENHA = False
-    VALIDAR_DADOS_USUARIO = False
-    VALIDAR_PRECO = False
-    VALIDAR_CODIGO = False
+    VALIDAR_CPF = True
+    VALIDAR_DATA_NASCIMENTO = True
+    VALIDAR_NOME = True
+    VALIDAR_TELEFONE = True
+    VALIDAR_EMAIL = True
+    VALIDAR_SENHA = True
+    VALIDAR_DADOS_USUARIO = True
+    VALIDAR_PRECO = True
+    VALIDAR_CODIGO = True
 
     @staticmethod
     def validar_cpf(cpf=None):
@@ -89,8 +89,8 @@ class Validador:
         if not isinstance(nome, str) or not nome:
             return "Nome inválido! O nome não pode estar vazio."
 
-        if len(nome.strip()) < 2:
-            return "Nome deve ter pelo menos 2 caracteres."
+        if len(nome.strip()) < 4:
+            return "Nome deve ter pelo menos 4 caracteres."
 
         if not re.match(r'^[A-Za-zÀ-ÖØ-öø-ÿ\s]+$', nome):
             return "Nome inválido! O nome não pode conter números ou símbolos."
