@@ -1,458 +1,160 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from typing import List, Optional
-from tkinter import font as tkfont
-import math
-from .components.textos import TextosPadrao
-from .components.botoes import BotoesPadrao
-from .components.tabelas import TabelasPadrao
-from .components.modais import ModaisPadrao
-from .tela_formulario_ocorrencia import TelaFormularioOcorrencia
 
 
 class TelaOcorrencias:
-    def __init__(self, controlador_ocorrencia):
-        self._controlador_ocorrencia = controlador_ocorrencia
+    def __init__(self, container, controlador):
+        self._controlador_ocorrencia = controlador
         self.main_frame = None
-        self.frame_lista = None
         self.linhas_frame = None
 
-    def inicializar_componentes(self, parent):
-        self.main_frame = tk.Frame(parent, bg="white")
+    def inicializar_componentes(self, container):
+        self.main_frame = ttk.Frame(container)
         self.main_frame.pack(fill="both", expand=True)
 
-        self._criar_cabecalho()
-        self._criar_tabela()
+        style = ttk.Style()
+        style.configure("White.TFrame", background="white")
+        self.main_frame.configure(style="White.TFrame")
 
-        return self.main_frame
+        top_header = tk.Frame(self.main_frame, bg="white")
+        top_header.pack(fill="x", pady=(0, 15), padx=20)
 
-    def _criar_cabecalho(self):
-        header_frame = tk.Frame(self.main_frame, bg="white")
-        header_frame.pack(fill="x", padx=40, pady=(20, 10))
+        tk.Label(top_header, text="⚠️ Ocorrências", font=("Arial", 20, "bold"),
+                 bg="white").pack(side="left", pady=10)
 
-        titulo_frame = tk.Frame(header_frame, bg="white")
-        titulo_frame.pack(side="left")
-        TextosPadrao.titulo_principal(titulo_frame, "Ocorrências")
+        usuario = self._controlador_ocorrencia._controlador_sistema.usuario_logado
+        eh_admin = (usuario.tipo_usuario == 'administrador')
 
-        botoes_frame = tk.Frame(header_frame, bg="white")
-        botoes_frame.pack(side="right")
+        if not eh_admin:
+            tk.Button(top_header, text="+ Nova Ocorrência",
+                      bg="#0d6efd", fg="white", font=("Arial", 10, "bold"), relief="flat",
+                      command=lambda: self._controlador_ocorrencia.abrir_tela_formulario()).pack(side="right", pady=10)
 
-        usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
-        if usuario_logado and getattr(usuario_logado, "tipo_usuario", "").lower() == 'morador':
-            btn_registrar = ttk.Button(
-                botoes_frame,
-                text="Registrar Ocorrência",
-                command=self._controlador_ocorrencia.abrir_tela_formulario
-            )
-            btn_registrar.pack(side="right")
+        self.header_frame = tk.Frame(self.main_frame, bg="#f8f9fa", relief="solid", bd=1)
+        self.header_frame.pack(fill="x", padx=20)
 
-    def _criar_tabela(self):
-        if self.frame_lista:
-            self.frame_lista.destroy()
+        self.header_frame.columnconfigure(0, weight=0, minsize=100)
+        self.header_frame.columnconfigure(1, weight=0, minsize=150)
+        self.header_frame.columnconfigure(2, weight=1)
+        self.header_frame.columnconfigure(3, weight=0, minsize=120)
+        self.header_frame.columnconfigure(4, weight=0, minsize=200)
 
-        self.frame_lista = tk.Frame(self.main_frame, bg="white")
-        self.frame_lista.pack(fill="both", expand=True, padx=40, pady=(0, 20))
+        pad = 8
+        font_head = ("Arial", 10, "bold")
+        bg_head = "#f8f9fa"
 
-        headers = ("Morador", "Título", "Status", "Ações")
-        widths = [180, 250, 120, 150]
+        tk.Label(self.header_frame, text="Data", font=font_head, bg=bg_head).grid(row=0, column=0, sticky="w", padx=pad,
+                                                                                  pady=pad)
+        tk.Label(self.header_frame, text="Morador", font=font_head, bg=bg_head).grid(row=0, column=1, sticky="w",
+                                                                                     padx=pad, pady=pad)
+        tk.Label(self.header_frame, text="Título", font=font_head, bg=bg_head).grid(row=0, column=2, sticky="w",
+                                                                                    padx=pad, pady=pad)
+        tk.Label(self.header_frame, text="Status", font=font_head, bg=bg_head).grid(row=0, column=3, sticky="w",
+                                                                                    padx=pad, pady=pad)
+        tk.Label(self.header_frame, text="Ações", font=font_head, bg=bg_head).grid(row=0, column=4, sticky="e",
+                                                                                   padx=pad, pady=pad)
 
-        header_frame = tk.Frame(self.frame_lista, bg="white")
-        header_frame.pack(fill="x", pady=(10, 5))
-        for i, h in enumerate(headers):
-            tk.Label(
-                header_frame,
-                text=h,
-                bg="white",
-                font=("Arial", 12, "bold"),
-                padx=5,
-                pady=5,
-                width=int(widths[i] / 10),
-                anchor="w"
-            ).grid(row=0, column=i, sticky="w")
+        canvas_container = tk.Frame(self.main_frame, bg="white")
+        canvas_container.pack(fill="both", expand=True, padx=20)
 
-        canvas = tk.Canvas(self.frame_lista, bg="white", highlightthickness=0)
-        canvas.pack(side="left", fill="both", expand=True)
+        self.canvas = tk.Canvas(canvas_container, bg="white", highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(canvas_container, orient="vertical", command=self.canvas.yview)
 
-        scrollbar = tk.Scrollbar(self.frame_lista, orient="vertical", command=canvas.yview)
-        scrollbar.pack(side="right", fill="y")
+        self.linhas_frame = tk.Frame(self.canvas, bg="white")
 
-        canvas.configure(yscrollcommand=scrollbar.set)
+        self.linhas_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
 
-        self.linhas_frame = tk.Frame(canvas, bg="white")
-        canvas.create_window((0, 0), window=self.linhas_frame, anchor="nw")
+        self.canvas.create_window((0, 0), window=self.linhas_frame, anchor="nw", width=1000)
 
-        def on_frame_configure(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
+        def _on_canvas_configure(event):
+            self.canvas.itemconfig(self.canvas.find_all()[0], width=event.width)
 
-        self.linhas_frame.bind("<Configure>", on_frame_configure)
+        self.canvas.bind("<Configure>", _on_canvas_configure)
 
-        # Preenche a lista chamando o controlador/listagem padrão
-        self.atualizar_lista()
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-    def atualizar_lista(self, ocorrencias: Optional[List] = None):
-        usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
 
-        if ocorrencias is None:
-            ocorrencias = self._controlador_ocorrencia.listar_ocorrencias() or []
+    def atualizar_lista(self):
+        if self._controlador_ocorrencia:
+            self._controlador_ocorrencia._atualizar_lista_ocorrencias()
 
-        # Filtragem por tipo de usuário
-        if usuario_logado:
-            tipo = getattr(usuario_logado, "tipo_usuario", "").lower()
-            if tipo == "morador":
-                cpf_logado = getattr(usuario_logado, "cpf", None)
-                ocorrencias = [
-                    o for o in ocorrencias
-                    if getattr(o, "morador", None) and getattr(o.morador, "cpf", None) == cpf_logado
-                ]
-            elif tipo == "administrador":
-                # Administrador vê tudo
-                pass
-            else:
-                ocorrencias = []
-        else:
-            ocorrencias = []
+    def exibir_ocorrencias(self, lista_ocorrencias):
+        if self.linhas_frame is None:
+            return
 
-        # Limpa linhas existentes
         for widget in self.linhas_frame.winfo_children():
             widget.destroy()
 
-        # Mensagens de vazio
-        tipo_usuario = getattr(usuario_logado, "tipo_usuario", "").lower() if usuario_logado else ""
-        if not ocorrencias:
-            if tipo_usuario == "morador":
-                tk.Label(self.linhas_frame, text="Você não possui ocorrências.", bg="white").pack(pady=10)
-            elif tipo_usuario == "administrador":
-                tk.Label(self.linhas_frame, text="Não há ocorrências cadastradas.", bg="white").pack(pady=10)
-            else:
-                tk.Label(self.linhas_frame, text="Nenhuma ocorrência disponível.", bg="white").pack(pady=10)
+        if not lista_ocorrencias:
+            tk.Label(self.linhas_frame, text="Nenhuma ocorrência encontrada.", bg="white", fg="#666").pack(pady=20)
             return
 
-        # Renderiza cada ocorrência em linha
-        for i, o in enumerate(ocorrencias):
-            morador_nome = getattr(getattr(o, "morador", None), "nome", "Desconhecido")
-            status = getattr(o, "status", "Pendente") or "Pendente"
-            titulo = getattr(o, "titulo", "")
-            descricao = getattr(o, "descricao", "")
+        usuario = self._controlador_ocorrencia._controlador_sistema.usuario_logado
+        eh_admin = (usuario.tipo_usuario == 'administrador')
 
-            linha = tk.Frame(self.linhas_frame, bg="white")
-            linha.pack(fill="x", pady=2)
+        for o in lista_ocorrencias:
+            row = tk.Frame(self.linhas_frame, bg="white")
+            row.pack(fill="x", pady=0)
 
-            tk.Label(linha, text=morador_nome, bg="white", width=25, anchor="w").pack(side="left")
-            tk.Label(linha, text=titulo, bg="white", width=35, anchor="w").pack(side="left")
-            tk.Label(linha, text=status, bg="white", width=15, anchor="w").pack(side="left")
+            row.columnconfigure(0, weight=0, minsize=100)
+            row.columnconfigure(1, weight=0, minsize=150)
+            row.columnconfigure(2, weight=1)
+            row.columnconfigure(3, weight=0, minsize=120)
+            row.columnconfigure(4, weight=0, minsize=200)
 
-            visualizar = tk.Label(
-                linha,
-                text="Visualizar",
-                fg="blue",
-                cursor="hand2",
-                bg="white",
-                font=("Arial", 10, "underline")
-            )
-            visualizar.pack(side="left", padx=5)
-            visualizar.bind("<Button-1>", lambda e, ocorr=o: self._abrir_visualizar(ocorr))
-
-    def _abrir_visualizar(self, ocorrencia):
-        usuario_logado = self._controlador_ocorrencia._controlador_sistema.usuario_logado
-
-        modal = tk.Toplevel(self.main_frame)
-        modal.title("Visualizar Ocorrência")
-        modal.geometry("600x400")
-        modal.transient(self.main_frame)
-        modal.grab_set()
-        modal.configure(bg="#f5f5f5")
-
-        card = tk.Frame(modal, bg="white", relief="solid", bd=1)
-        card.pack(padx=30, pady=30, fill="both", expand=True)
-
-        header = tk.Frame(card, bg="white")
-        header.pack(fill="x", padx=20, pady=(20, 5))
-
-        tk.Label(
-            header,
-            text=getattr(ocorrencia, "titulo", ""),
-            bg="white",
-            font=("Arial", 12, "bold"),
-            anchor="w"
-        ).pack(anchor="w")
-
-        # tentativa robusta de formatar data
-        data_raw = getattr(ocorrencia, "data", "")
-        data_formatada = str(data_raw)
-        from datetime import datetime
-        for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+            data_fmt = str(o.data)
             try:
-                data_formatada = datetime.strptime(str(data_raw), fmt).strftime("%d/%m/%Y")
-                break
-            except Exception:
+                from datetime import datetime
+                data_fmt = datetime.strptime(str(o.data), "%Y-%m-%d").strftime("%d/%m/%Y")
+            except:
                 pass
 
-        autor_nome = getattr(getattr(ocorrencia, "morador", None), "nome", "Desconhecido")
-        autor_data = f"{autor_nome} - {data_formatada}"
-        tk.Label(
-            header,
-            text=autor_data,
-            bg="white",
-            fg="#666666",
-            font=("Arial", 10)
-        ).pack(anchor="w")
+            pad = 8
 
-        tk.Frame(card, height=1, bg="#e5e5e5").pack(fill="x", padx=20, pady=(5, 10))
+            tk.Label(row, text=data_fmt, bg="white").grid(row=0, column=0, sticky="w", padx=pad, pady=pad)
 
-        botoes_frame = tk.Frame(card, bg="white")
-        botoes_frame.pack(side="bottom", fill="x", padx=20, pady=20)
+            nome = o.morador.nome if o.morador else "Desconhecido"
+            tk.Label(row, text=nome, bg="white").grid(row=0, column=1, sticky="w", padx=pad, pady=pad)
 
-        def criar_botao(texto, cor, comando):
-            return tk.Button(
-                botoes_frame,
-                text=texto,
-                bg=cor,
-                fg="white",
-                font=("Arial", 10, "bold"),
-                relief="flat",
-                activebackground=cor,
-                activeforeground="white",
-                padx=15,
-                pady=6,
-                cursor="hand2",
-                command=comando
-            )
+            tk.Label(row, text=o.titulo, bg="white", font=("Arial", 10, "bold")).grid(row=0, column=2, sticky="w",
+                                                                                      padx=pad, pady=pad)
 
-        tipo = getattr(usuario_logado, "tipo_usuario", "").lower() if usuario_logado else ""
-        if tipo == "morador":
-            criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
-            criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
-        elif tipo == "administrador":
-            criar_botao("Editar", "#0d6efd", lambda: self._abrir_formulario_editar(ocorrencia)).pack(side="right", padx=5)
-            criar_botao("Excluir", "#dc3545", lambda: self._excluir_ocorrencia(modal, ocorrencia)).pack(side="right", padx=5)
-            criar_botao("Gerar Alerta", "#ffc107", lambda: self._abrir_modal_alerta()).pack(side="right", padx=5)
+            bg_status = "#d1e7dd" if o.status == "Finalizado" else "#fff3cd"
+            fg_status = "#0f5132" if o.status == "Finalizado" else "#664d03"
 
-            if getattr(ocorrencia, "status", "") == "Pendente":
-                criar_botao("Marcar como Finalizado", "#198754",
-                            lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Finalizado")).pack(side="right", padx=5)
-            elif getattr(ocorrencia, "status", "") == "Finalizado":
-                criar_botao("Marcar como Pendente", "#198754",
-                            lambda: self._alterar_status_ocorrencia(modal, ocorrencia, "Pendente")).pack(side="right", padx=5)
+            lbl_status = tk.Label(row, text=o.status, bg=bg_status, fg=fg_status,
+                                  font=('Arial', 8, 'bold'), padx=8, pady=2)
+            lbl_status.grid(row=0, column=3, sticky="w", padx=pad, pady=pad)
 
-        descr_text = str(getattr(ocorrencia, "descricao", "") or "")
-        wrap_pixels = 520
-        fonte = tkfont.Font(family="Arial", size=10)
-        linha_altura = fonte.metrics("linespace")
+            acoes_frame = tk.Frame(row, bg="white")
+            acoes_frame.grid(row=0, column=4, sticky="e", padx=pad, pady=pad)
 
-        def estimate_visual_lines(text, font_obj, wrap_px):
-            total_lines = 0
-            avg_char_width = max(1, font_obj.measure("abcdefghijklmnopqrstuvwxyz") / 26.0)
+            tk.Button(acoes_frame, text="👁", bg="#17a2b8", fg="white", bd=0, width=3, cursor="hand2",
+                      command=lambda id=o.id: self._controlador_ocorrencia.abrir_tela_visualizacao(id)).pack(side="left", padx=2)
 
-            for original_line in text.splitlines() or [""]:
-                words = original_line.split(" ")
-                cur_width = 0
-                cur_line_count = 1
-                for word in words:
-                    word_w = font_obj.measure(word + " ")
-                    if word_w > wrap_px:
-                        chars_per_line = max(1, int(wrap_px / avg_char_width))
-                        if cur_width > 0:
-                            cur_line_count += 1
-                            cur_width = 0
-                        needed = math.ceil(len(word) / chars_per_line)
-                        cur_line_count += (needed - 1)
-                        cur_width = 0
-                    else:
-                        if cur_width + word_w <= wrap_px:
-                            cur_width += word_w
-                        else:
-                            cur_line_count += 1
-                            cur_width = word_w
-                total_lines += cur_line_count
-            return total_lines
+            if eh_admin:
+                txt_status = "Reabrir" if o.status == "Finalizado" else "Finalizar"
+                bg_btn_status = "#ffc107" if o.status == "Finalizado" else "#198754"
 
-        num_visual_lines = estimate_visual_lines(descr_text, fonte, wrap_pixels)
-        MAX_VISIBLE_LINES = 5
+                tk.Button(acoes_frame, text="✓", bg=bg_btn_status, fg="white", bd=0, width=3, cursor="hand2",
+                          command=lambda id=o.id: self._controlador_ocorrencia.alterar_status_ocorrencia(id)).pack(side="left",
+                                                                                                                   padx=2)
 
-        if num_visual_lines > MAX_VISIBLE_LINES:
-            scroll_container = tk.Frame(card, bg="#f8f9fa")
-            scroll_container.pack(fill="both", expand=False, padx=20, pady=(0, 10))
-
-            canvas = tk.Canvas(scroll_container, bg="#f8f9fa", highlightthickness=0)
-            canvas.pack(side="left", fill="both", expand=True)
-
-            scrollbar = tk.Scrollbar(scroll_container, orient="vertical", command=canvas.yview)
-            scrollbar.pack(side="right", fill="y")
-            canvas.configure(yscrollcommand=scrollbar.set)
-
-            inner_frame = tk.Frame(canvas, bg="#f8f9fa")
-            window_id = canvas.create_window((0, 0), window=inner_frame, anchor="nw")
-
-            def _on_configure_inner(event):
-                canvas.configure(scrollregion=canvas.bbox("all"))
-            inner_frame.bind("<Configure>", _on_configure_inner)
-
-            def _on_canvas_configure(event):
-                canvas.itemconfig(window_id, width=event.width)
-            canvas.bind("<Configure>", _on_canvas_configure)
-
-            descricao_label = tk.Label(
-                inner_frame,
-                text=descr_text,
-                bg="#f8f9fa",
-                justify="left",
-                anchor="nw",
-                wraplength=wrap_pixels,
-                font=("Arial", 10)
-            )
-            descricao_label.pack(fill="x", padx=10, pady=10, anchor="w")
-
-            canvas.config(height=linha_altura * MAX_VISIBLE_LINES + 20)
-        else:
-            descricao_frame = tk.Frame(card, bg="#f8f9fa")
-            descricao_frame.pack(fill="x", padx=20, pady=(0, 10))
-            descricao_label = tk.Label(
-                descricao_frame,
-                text=descr_text,
-                bg="#f8f9fa",
-                justify="left",
-                anchor="nw",
-                wraplength=wrap_pixels,
-                font=("Arial", 10)
-            )
-            descricao_label.pack(fill="x", padx=10, pady=10, anchor="w")
-
-        rodape_info = tk.Frame(card, bg="white")
-        rodape_info.pack(fill="x", padx=20, pady=(0, 10))
-        tk.Label(
-            rodape_info,
-            text=f"Status atual: {getattr(ocorrencia, 'status', '')}",
-            bg="white",
-            fg="#444",
-            font=("Arial", 10, "italic")
-        ).pack(anchor="w")
-
-        modal.update()
-
-    def _finalizar_ocorrencia(self, modal, ocorrencia):
-        confirm = messagebox.askyesno("Confirmar", "Deseja marcar esta ocorrência como finalizada?")
-        if not confirm:
-            return
-
-        sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, "Finalizado")
-        if sucesso:
-            messagebox.showinfo("Sucesso", "Ocorrência marcada como finalizada!")
-            modal.destroy()
-            self.atualizar_lista()
-        else:
-            messagebox.showerror("Erro", "Não foi possível atualizar o status da ocorrência.")
-
-    def _gerar_alerta(self):
-        alerta_modal = tk.Toplevel(self.main_frame)
-        alerta_modal.title("Gerar Alerta")
-        alerta_modal.geometry("300x150")
-        alerta_modal.transient(self.main_frame)
-        alerta_modal.grab_set()
-
-        tk.Label(
-            alerta_modal,
-            text="Em desenvolvimento...",
-            bg="white",
-            font=("Arial", 11, "italic")
-        ).pack(expand=True, fill="both", padx=20, pady=40)
-
-        ttk.Button(alerta_modal, text="Fechar", command=alerta_modal.destroy).pack(pady=10)
-
-    def _abrir_formulario(self):
-        # delega para o controlador (mantive o nome do método que você já tem)
-        self._controlador_ocorrencia.abrir_tela_formulario()
-
-    def exibir_ocorrencias(self, lista: List):
-        # Compatível com controlador que envia OBJETOS Ocorrencia
-        self.atualizar_lista(ocorrencias=lista)
-
-    def mostrar_erro_modal(self, msg: str):
-        messagebox.showerror("Erro", msg)
-
-    def mostrar_sucesso(self, msg: str):
-        messagebox.showinfo("Sucesso", msg)
-
-    def fechar_modal(self, modal):
-        modal.destroy()
-
-    def _abrir_formulario_editar(self, ocorrencia):
-        TelaFormularioOcorrencia(
-            parent=self.main_frame,
-            controlador_ocorrencia=self._controlador_ocorrencia,
-            ocorrencia_existente=ocorrencia
-        ).grab_set()
-
-    def _excluir_ocorrencia(self, modal_visualizar, ocorrencia):
-        def confirmar_exclusao():
-            sucesso = self._controlador_ocorrencia.excluir_ocorrencia(ocorrencia.id)
-            if sucesso:
-                messagebox.showinfo("Resultado", "Ocorrência excluída com sucesso!")
+                tk.Button(acoes_frame, text="🗑", bg="#dc3545", fg="white", bd=0, width=3, cursor="hand2",
+                          command=lambda id=o.id: self._controlador_ocorrencia.excluir_ocorrencia(id)).pack(side="left", padx=2)
             else:
-                messagebox.showerror("Erro", "Não foi possível excluir a ocorrência.")
-            confirm_modal.destroy()
-            modal_visualizar.destroy()
-            self.atualizar_lista()
+                tk.Button(acoes_frame, text="✏️", bg="#ffc107", fg="black", bd=0, width=3, cursor="hand2",
+                          command=lambda obj=o: self._controlador_ocorrencia.abrir_tela_formulario(obj)).pack(side="left", padx=2)
 
-        confirm_modal = tk.Toplevel(self.main_frame)
-        confirm_modal.title("Confirmação")
-        confirm_modal.geometry("350x150")
-        confirm_modal.transient(self.main_frame)
-        confirm_modal.grab_set()
-        confirm_modal.configure(bg="white")
+                tk.Button(acoes_frame, text="🗑", bg="#dc3545", fg="white", bd=0, width=3, cursor="hand2",
+                          command=lambda id=o.id: self._controlador_ocorrencia.excluir_ocorrencia(id)).pack(side="left", padx=2)
 
-        tk.Label(
-            confirm_modal,
-            text="Deseja realmente excluir esta ocorrência?",
-            bg="white",
-            font=("Arial", 11),
-            wraplength=300,
-            justify="center"
-        ).pack(expand=True, fill="both", padx=20, pady=20)
+            tk.Frame(self.linhas_frame, height=1, bg="#e0e0e0").pack(fill="x")
 
-        botoes_frame = tk.Frame(confirm_modal, bg="white")
-        botoes_frame.pack(pady=10)
-
-        tk.Button(
-            botoes_frame,
-            text="Não",
-            bg="#6c757d",
-            fg="white",
-            font=("Arial", 10, "bold"),
-            relief="flat",
-            padx=15,
-            pady=6,
-            cursor="hand2",
-            command=confirm_modal.destroy
-        ).pack(side="left", padx=10)
-
-        tk.Button(
-            botoes_frame,
-            text="Sim",
-            bg="#198754",
-            fg="white",
-            font=("Arial", 10, "bold"),
-            relief="flat",
-            padx=15,
-            pady=6,
-            cursor="hand2",
-            command=confirmar_exclusao
-        ).pack(side="right", padx=10)
-
-    def _alterar_status_ocorrencia(self, modal, ocorrencia, novo_status):
-        sucesso = self._controlador_ocorrencia.alterar_status_ocorrencia(ocorrencia.id, novo_status)
-        if sucesso:
-            modal.destroy()
-            self.atualizar_lista()
-
-    def _abrir_modal_alerta(self):
-        alerta = tk.Toplevel(self.main_frame)
-        alerta.title("Gerar Alerta")
-        alerta.geometry("300x150")
-        alerta.transient(self.main_frame)
-        alerta.grab_set()
-
-        frame = tk.Frame(alerta, bg="white")
-        frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        tk.Label(frame, text="Em desenvolvimento...", bg="white", font=("Arial", 11)).pack(expand=True)
-        ttk.Button(frame, text="Fechar", command=alerta.destroy).pack(pady=10)
+    def mostrar_erro(self, msg):
+        messagebox.showerror("Erro", msg)
